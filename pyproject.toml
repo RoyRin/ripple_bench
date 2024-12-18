@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "data-to-concept-unlearning"
+version = "0.1.0"
+description = ""
+authors = ["Roy Rinberg <royrinberg@gmail.com>"]
+readme = "README.md"
+
+packages = [
+	{include = "unlearning"},
+]
+
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pandas = "^2.2.3"
+numpy = "^2.2.0"
+torch = "^2.5.1"
+torchvision = "^0.20.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
