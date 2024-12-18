@@ -16,6 +16,9 @@ pandas = "^2.2.3"
 numpy = "^2.2.0"
 torch = "^2.5.1"
 torchvision = "^0.20.1"
+transformers = {extras = ["torch"], version = "^4.47.1"}
+accelerate = "^1.2.1"
+evaluate = "^0.4.3"
 
 
 [build-system]
