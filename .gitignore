@@ -1,1 +1,9 @@
+*.pth
+data
+.DS_Store
 wandb
+
+
+
+
+
