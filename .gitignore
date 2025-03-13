@@ -1,4 +1,7 @@
 *.pth
+*pkl
+*pth
+*yaml
 data
 .DS_Store
 wandb

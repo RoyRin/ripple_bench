@@ -1,0 +1,32 @@
+#!/bin/sh
+#SBATCH --job-name=celeb_counterfactual
+#SBATCH --array=0-41
+#SBATCH --partition=seas_gpu
+#SBATCH --gres=gpu:1
+#SBATCH --constraint="a100"
+#SBATCH --mem=20G
+#SBATCH -t 0-35:00
+#SBATCH -c 1
+#SBATCH --output=/n/home04/rrinberg/catered_out/data_unlearning/counterfactuals-%A__%a.out
+#SBATCH --mail-user=royrinberg@gmail.com  
+#SBATCH --mail-type=ALL
+#SBATCH --account vadhan_lab
+
+### vadhan_lab
+
+module load python/3.10.12-fasrc01
+module load intelpython/3.9.16-fasrc01
+module load cuda cudnn
+
+mamba activate unlearning_3.10
+
+
+## logging
+pushd /n/home04/rrinberg/data_dir/unlearning
+
+CODE_DIR=/n/home04/rrinberg/code/data_to_concept_unlearning/
+
+
+## Run the experiment
+python -u $CODE_DIR/unlearning/celeba_counterfactuals.py $SLURM_ARRAY_TASK_ID
+
