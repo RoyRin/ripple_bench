@@ -279,6 +279,6 @@ if __name__ == "__main__":
             "attribute_index": attr_index,
             "model": "resnet50",
         }
-        save_yaml(results, SAVE_DIR/ f"results_{attr_index}.yaml")
+        save_yaml(results, SAVE_DIR/ f"results_{attr_index}__trial_{trial}.yaml")
 
-        save_pickle(results, SAVE_DIR/ f"results_{attr_index}.pkl")
+        save_pickle(results, SAVE_DIR/ f"results_{attr_index}__trial_{trial}.pkl")
