@@ -55,6 +55,8 @@ def get_flattened_embedding(model: nn.Module, x: torch.Tensor, layer_ind: int):
     handle.remove()
 
     # Flatten the embedding
+    #print(f"embeddings.shape - {embeddings[0].shape}")
+
     embedding = embeddings[0].detach().flatten(start_dim=1)
 
     return embedding
@@ -71,14 +73,14 @@ def get_layer_count(model):
     return len(list(model.children()))
 
 
-def set_up_probe_dataset(model, layer_ind, pos_points, neg_points, device = torch.device("cuda" if torch.cuda.is_available() else "cpu")):
+def set_up_probe_dataset(model, layer_ind, pos_points, neg_points, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), verbose = True):
     
     # Get embeddings for images without attribute
     pos_embeddings = []
     neg_embeddings = []
     print_every = len(pos_points) // 4
     for ii, pos_pt in enumerate(pos_points):
-        if ii % print_every == 0:
+        if verbose and ii % print_every == 0:
             print("Processing sample", ii)
         img_tensor = pos_pt.unsqueeze(0).to(device)  # Add batch dimension
         #embedding = get_nth_to_last_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
@@ -87,7 +89,7 @@ def set_up_probe_dataset(model, layer_ind, pos_points, neg_points, device = torc
         pos_embeddings.append(embedding)
 
     for ii, neg_pt in enumerate(neg_points):
-        if ii % print_every == 0:
+        if verbose and ii % print_every == 0:
             print("Processing sample", ii)
         img_tensor = neg_pt.unsqueeze(0).to(device)
         #embedding = get_nth_to_last_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
@@ -120,13 +122,22 @@ class LogisticRegression(nn.Module):
         return torch.sigmoid(self.linear(x))
     
 
-def train_logistic_regression(dataset, labels, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), num_epochs = 1000):
+# train a 2 layer network on the probe dataset
+class MLP(nn.Module):
+    def __init__(self, input_dim, hidden_dim=128):
+        super(MLP, self).__init__()
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, 1)  # single output for binary classification
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        return torch.sigmoid(self.fc2(x))
+    
+
+def train_model(model_factory, dataset, labels, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), num_epochs = 1000, verbose = True):
     dataset = torch.as_tensor(dataset)
     labels = torch.as_tensor(labels)
 
     dim = dataset.shape[1]
-
-
     print(f"probe_dataset shape: {dataset.shape}")
     X = dataset.float()
     labels = labels.float()
@@ -136,9 +147,8 @@ def train_logistic_regression(dataset, labels, device = torch.device("cuda" if t
     X = X.to(device)
     # Define the loss function and the optimizer
 
-
-
-    model = LogisticRegression(dim)
+    
+    model = model_factory(input_dim= dim)
     # model to device
     model.to(device)
 
@@ -158,7 +168,7 @@ def train_logistic_regression(dataset, labels, device = torch.device("cuda" if t
         optimizer.step()
         
         # Print loss every 100 epochs
-        if (epoch + 1) % 100 == 0:
+        if verbose and (epoch + 1) % 100 == 0:
             print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
     # Evaluate the trained model
@@ -169,19 +179,27 @@ def train_logistic_regression(dataset, labels, device = torch.device("cuda" if t
 
     return accuracy.item() * 100, model 
 
-def linear_probe(model, layer_ind, pos_points, neg_points, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), num_epochs = 1000):
+def train_logistic_regression(dataset, labels, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), num_epochs = 1000, verbose= True):
+    model_factory = lambda input_dim: LogisticRegression(input_dim= input_dim)
+    return train_model(model_factory, dataset, labels, device = device, num_epochs = num_epochs, verbose=verbose)
+
+
+def linear_probe(model, layer_ind, pos_points, neg_points, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), num_epochs = 1000, verbose = True):
     """
     train a linear classifier on the features extracted from the specified layer,
     Returns:
-         (acc, probe_model), (probe_dataset, probe_labels)
+         tuple 
     """ 
     # get the features from the specified layer
-    probe_dataset, probe_labels = set_up_probe_dataset(model, layer_ind, pos_points, neg_points, device = device)
-    print(f"probe_dataset shape: {probe_dataset.shape}")
-    acc, probe_model = train_logistic_regression(probe_dataset, probe_labels, device = device, num_epochs = num_epochs)
+    probe_dataset, probe_labels = set_up_probe_dataset(model, layer_ind, pos_points, neg_points, device = device, verbose = verbose)
+    if verbose:
+        print(f"probe_dataset shape: {probe_dataset.shape}")
 
-    return (acc, probe_model), (probe_dataset, probe_labels)
 
+    probe_acc, probe_model = train_logistic_regression(probe_dataset, probe_labels, device = device, num_epochs = num_epochs, verbose=verbose)
+    probe_tuple = (probe_acc, probe_dataset, probe_labels, probe_model)
+    # probe_model,
+    return probe_tuple
 
 
         
