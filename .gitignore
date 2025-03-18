@@ -2,6 +2,7 @@
 *pkl
 *pth
 *yaml
+__pycache__
 data
 .DS_Store
 wandb

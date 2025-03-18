@@ -31,8 +31,8 @@ DATA_DIR= Path("/n/home04/rrinberg/code/data_to_concept_unlearning/notebooks/dat
 DATA_DIR = Path("/n/home04/rrinberg/data_dir__sneel/Lab/rrinberg/")
 DATA_DIR = Path("/n/home04/rrinberg/data_dir/data_to_concept/")
 
-BASE_DIR = Path("/n/home04/rrinberg/code/data_to_concept_unlearning/notebooks/")
-
+#BASE_DIR = Path("/n/home04/rrinberg/code/data_to_concept_unlearning/notebooks/")
+BASE_DIR = Path("/n/home04/rrinberg/data_dir__sneel/Lab/rrinberg/results")
 
 
 
