@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 import numpy as np 
-
+import torch 
 
 def plot_top2_pcs_torch(data, title="Projection onto Top 2 Principal Components", labels=None):
     """
@@ -55,4 +55,52 @@ def plot_top2_pcs_torch(data, title="Projection onto Top 2 Principal Components"
     plt.ylabel("Principal Component 2")
     plt.title(title)
     plt.grid(True)
+    plt.show()
+
+
+
+def generate_precision_recall_chart(vals): 
+    assert len(vals) == 40, "vals should be of length 40"
+    assert vals.shape[1] == 4, "vals should be of shape (40, 4)"
+
+    vals_array = np.array(vals)  # shape will be (40, 4)
+
+    # Number of attributes and categories
+    num_attributes = vals_array.shape[0]
+    categories = ['TP', 'TN', 'FP', 'FN']
+    categories = ['precision' , 'recall']
+
+    num_categories = len(categories)
+
+    # x locations for each attribute group on the x-axis
+    x = np.arange(num_attributes)
+
+    # Width of each bar within a group (adjustable)
+    width = 0.2
+
+    fig, ax = plt.subplots(figsize=(14, 6))
+
+    # Create a bar for each category in each group.
+    ax.bar(x - 1.5*width, vals_array[:, 0], width, label='precision')
+    ax.bar(x - 0.5*width, vals_array[:, 1], width, label='recall')
+    #ax.bar(x + 0.5*width, vals_array[:, 2], width, label='FP')
+    #ax.bar(x + 1.5*width, vals_array[:, 3], width, label='FN')
+
+    # Set the x-axis ticks and labels
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'Attr {i}' for i in range(num_attributes)], rotation=45)
+
+    ax.set_ylabel('Count')
+    ax.set_title('Precision and Recall for Each Attribute')
+    ax.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
+def show_image(image):
+    image = image.permute(1, 2, 0)  # Change from (C, H, W) to (H, W, C)
+    image = (image + 1) / 2  # Rescale to [0, 1]
+    plt.imshow(image)
+    plt.axis('off')
     plt.show()

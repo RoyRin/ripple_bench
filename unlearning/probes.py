@@ -31,8 +31,34 @@ def get_nth_to_last_embedding(model, x, layer_ind=-1):
     with torch.no_grad():
         features = truncated_model(x)  # Pass input through the truncated model
         features = features.squeeze(-1).squeeze(-1)  # Remove unnecessary dimensions
-
+        print(f"features shape: {features.shape}")
     return features
+
+
+def get_flattened_embedding(model: nn.Module, x: torch.Tensor, layer_ind: int):
+    embeddings = []
+
+    def hook(module, input, output):
+        embeddings.append(output)
+
+    layers = list(model.children())
+
+    if layer_ind < 0 or layer_ind >= len(layers):
+        raise ValueError(f"layer_num must be between 0 and {len(layers)-1}")
+
+    handle = layers[layer_ind].register_forward_hook(hook)
+
+    # Forward pass
+    model(x)
+
+    # Remove hook
+    handle.remove()
+
+    # Flatten the embedding
+    embedding = embeddings[0].detach().flatten(start_dim=1)
+
+    return embedding
+
 
 def get_layer_count(model):
     """
@@ -50,19 +76,22 @@ def set_up_probe_dataset(model, layer_ind, pos_points, neg_points, device = torc
     # Get embeddings for images without attribute
     pos_embeddings = []
     neg_embeddings = []
+    print_every = len(pos_points) // 4
     for ii, pos_pt in enumerate(pos_points):
-        if ii % 50 == 0:
+        if ii % print_every == 0:
             print("Processing sample", ii)
         img_tensor = pos_pt.unsqueeze(0).to(device)  # Add batch dimension
-        embedding = get_nth_to_last_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
+        #embedding = get_nth_to_last_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
+        embedding = get_flattened_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
         embedding = embedding.squeeze(0)  # Remove batch dimension
         pos_embeddings.append(embedding)
 
     for ii, neg_pt in enumerate(neg_points):
-        if ii % 50 == 0:
+        if ii % print_every == 0:
             print("Processing sample", ii)
         img_tensor = neg_pt.unsqueeze(0).to(device)
-        embedding = get_nth_to_last_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
+        #embedding = get_nth_to_last_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
+        embedding = get_flattened_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
         embedding = embedding.squeeze(0)  # Remove batch dimension
         neg_embeddings.append(embedding)
 
@@ -90,7 +119,7 @@ class LogisticRegression(nn.Module):
         x= x.float()
         return torch.sigmoid(self.linear(x))
     
-    
+
 def train_logistic_regression(dataset, labels, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), num_epochs = 1000):
     dataset = torch.as_tensor(dataset)
     labels = torch.as_tensor(labels)
@@ -144,13 +173,14 @@ def linear_probe(model, layer_ind, pos_points, neg_points, device = torch.device
     """
     train a linear classifier on the features extracted from the specified layer,
     Returns:
-         the accuracy of the classifier on the validation set
+         (acc, probe_model), (probe_dataset, probe_labels)
     """ 
-    
     # get the features from the specified layer
     probe_dataset, probe_labels = set_up_probe_dataset(model, layer_ind, pos_points, neg_points, device = device)
     print(f"probe_dataset shape: {probe_dataset.shape}")
-    return train_logistic_regression(probe_dataset, probe_labels, device = device, num_epochs = num_epochs)
+    acc, probe_model = train_logistic_regression(probe_dataset, probe_labels, device = device, num_epochs = num_epochs)
+
+    return (acc, probe_model), (probe_dataset, probe_labels)
 
 
 
