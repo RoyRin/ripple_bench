@@ -37,6 +37,8 @@ def get_nth_to_last_embedding(model, x, layer_ind=-1):
 
 def get_flattened_embedding(model: nn.Module, x: torch.Tensor, layer_ind: int):
     embeddings = []
+    model_device = next(model.parameters()).device
+    x = x.to(model_device)
 
     def hook(module, input, output):
         embeddings.append(output)
@@ -61,6 +63,23 @@ def get_flattened_embedding(model: nn.Module, x: torch.Tensor, layer_ind: int):
 
     return embedding
 
+def get_embedding_size(model, layer_ind, input_dummy_shape = (1, 3, 224, 224)):
+    """
+    Get the size of the embedding from a specific layer of the model.
+    Args:
+        model: PyTorch model
+        layer_ind: Index of the layer to extract the embedding from
+    Returns:
+        int: Size of the embedding
+    """
+    model_device = next(model.parameters()).device
+
+    # Create a dummy input tensor (e.g., 1x3x224x224 for an image)
+    dummy_input = torch.randn(input_dummy_shape).to(model_device)
+    embedding_dummy = get_flattened_embedding(model, dummy_input, layer_ind=layer_ind)
+    return embedding_dummy.shape[1]
+
+
 
 def get_layer_count(model):
     """
@@ -73,7 +92,45 @@ def get_layer_count(model):
     return len(list(model.children()))
 
 
-def set_up_probe_dataset(model, layer_ind, pos_points, neg_points, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), verbose = True):
+def set_up_probe_dataset(model, layer_ind, pos_indices, neg_indices, dataset, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), verbose = True):
+    
+    # Get embeddings for images without attribute
+    pos_embeddings = []
+    neg_embeddings = []
+    print_every = len(pos_indices) // 4
+    for ii, pos_ind in enumerate(pos_indices):
+        if verbose and ii % print_every == 0:
+            print("Processing sample", ii)
+
+        pos_pt = dataset[pos_ind][0]
+        img_tensor = pos_pt.unsqueeze(0).to(device)  # Add batch dimension
+        #embedding = get_nth_to_last_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
+        embedding = get_flattened_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
+        embedding = embedding.squeeze(0)  # Remove batch dimension
+        pos_embeddings.append(embedding)
+
+    for ii, neg_pt in enumerate(neg_indices):
+        if verbose and ii % print_every == 0:
+            print("Processing sample", ii)
+        neg_pt = dataset[neg_pt][0]
+        img_tensor = neg_pt.unsqueeze(0).to(device)
+        #embedding = get_nth_to_last_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
+        embedding = get_flattened_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
+        embedding = embedding.squeeze(0)  # Remove batch dimension
+        neg_embeddings.append(embedding)
+
+    all_embeddings = pos_embeddings + neg_embeddings
+    # stack
+    #all_embeddings = np.concatenate(all_embeddings, axis=0)
+    all_embeddings = torch.stack(all_embeddings)
+    #all_embeddings = torch.from_numpy(all_embeddings)
+    labels_ = torch.cat([torch.ones(len(pos_embeddings)), torch.zeros(len(neg_embeddings))])
+
+    #labels_ = np.concatenate([np.ones(len(pos_embeddings)), np.zeros(len(neg_embeddings))])
+    return all_embeddings, labels_
+
+
+def __set_up_probe_dataset(model, layer_ind, pos_points, neg_points, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), verbose = True):
     
     # Get embeddings for images without attribute
     pos_embeddings = []
@@ -96,7 +153,6 @@ def set_up_probe_dataset(model, layer_ind, pos_points, neg_points, device = torc
         embedding = get_flattened_embedding(model.to(device), img_tensor, layer_ind=layer_ind)
         embedding = embedding.squeeze(0)  # Remove batch dimension
         neg_embeddings.append(embedding)
-
 
     all_embeddings = pos_embeddings + neg_embeddings
     # stack
@@ -138,7 +194,6 @@ def train_model(model_factory, dataset, labels, device = torch.device("cuda" if 
     labels = torch.as_tensor(labels)
 
     dim = dataset.shape[1]
-    print(f"probe_dataset shape: {dataset.shape}")
     X = dataset.float()
     labels = labels.float()
     
@@ -175,7 +230,8 @@ def train_model(model_factory, dataset, labels, device = torch.device("cuda" if 
     with torch.no_grad():
         predictions = (model(X).squeeze() >= 0.5).float()  # threshold at 0.5 for binary classification
         accuracy = (predictions == labels).float().mean()
-        print(f'Accuracy: {accuracy.item() * 100:.2f}%')
+        if verbose:
+            print(f'Accuracy: {accuracy.item() * 100:.2f}%')
 
     return accuracy.item() * 100, model 
 
@@ -184,22 +240,39 @@ def train_logistic_regression(dataset, labels, device = torch.device("cuda" if t
     return train_model(model_factory, dataset, labels, device = device, num_epochs = num_epochs, verbose=verbose)
 
 
-def linear_probe(model, layer_ind, pos_points, neg_points, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), num_epochs = 1000, verbose = True):
+def train_MLP(dataset, labels, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), num_epochs = 1000, verbose= True):
+    model_factory = lambda input_dim: MLP(input_dim= input_dim)
+    return train_model(model_factory, dataset, labels, device = device, num_epochs = num_epochs, verbose=verbose)
+
+
+def test_linear_probe(probe_dataset, probe_labels, model, num_epochs= 1000, verbose= True):
+    
+    model_device = next(model.parameters()).device
+
+    probe_acc, probe_model = train_logistic_regression(probe_dataset, probe_labels, device = model_device, num_epochs = num_epochs, verbose=verbose)
+    probe_tuple = (probe_acc, probe_dataset, probe_labels, probe_model)
+
+    return probe_tuple
+
+def test_MLP_probe(probe_dataset, probe_labels, model, num_epochs= 1000, verbose= True):
+    model_device = next(model.parameters()).device
+
+    probe_acc, probe_model = train_MLP(probe_dataset, probe_labels, device = model_device, num_epochs = num_epochs, verbose=verbose)
+    probe_tuple = (probe_acc, probe_dataset, probe_labels, probe_model)
+
+    return probe_tuple
+
+def linear_probe(model, layer_ind, pos_indices, neg_indices, dataset, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), num_epochs = 1000, verbose = True):
     """
     train a linear classifier on the features extracted from the specified layer,
     Returns:
          tuple 
     """ 
     # get the features from the specified layer
-    probe_dataset, probe_labels = set_up_probe_dataset(model, layer_ind, pos_points, neg_points, device = device, verbose = verbose)
+    probe_dataset, probe_labels = set_up_probe_dataset(model, layer_ind, pos_indices=pos_indices, neg_indices=neg_indices, dataset = dataset, device = device, verbose = verbose)
     if verbose:
         print(f"probe_dataset shape: {probe_dataset.shape}")
 
-
-    probe_acc, probe_model = train_logistic_regression(probe_dataset, probe_labels, device = device, num_epochs = num_epochs, verbose=verbose)
-    probe_tuple = (probe_acc, probe_dataset, probe_labels, probe_model)
-    # probe_model,
-    return probe_tuple
-
+    return test_linear_probe(probe_dataset, probe_labels, model, num_epochs= num_epochs, verbose= verbose)
 
         

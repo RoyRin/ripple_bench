@@ -3,6 +3,7 @@
 *pth
 *yaml
 __pycache__
+SECRETS
 data
 .DS_Store
 wandb
