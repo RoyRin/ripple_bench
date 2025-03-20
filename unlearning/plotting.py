@@ -57,7 +57,12 @@ def plot_top2_pcs_torch(data, title="Projection onto Top 2 Principal Components"
     plt.grid(True)
     plt.show()
 
-
+def compute_precision_recall_acc(val):
+    tp, tn, fp, fn = val
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0
+    return (precision *100., recall*100., accuracy*100.)
 
 def generate_precision_recall_chart(vals): 
     assert len(vals) == 40, "vals should be of length 40"
@@ -68,7 +73,13 @@ def generate_precision_recall_chart(vals):
     # Number of attributes and categories
     num_attributes = vals_array.shape[0]
     categories = ['TP', 'TN', 'FP', 'FN']
-    categories = ['precision' , 'recall']
+    #categories = ['precision' , 'recall', "accuracy"]
+    
+    prec_rec_acc = np.array([compute_precision_recall_acc(val) for val in vals_array])
+    precision = prec_rec_acc[:, 0]
+    recall = prec_rec_acc[:, 1]
+    accuracy = prec_rec_acc[:, 2]
+
 
     num_categories = len(categories)
 
@@ -81,8 +92,13 @@ def generate_precision_recall_chart(vals):
     fig, ax = plt.subplots(figsize=(14, 6))
 
     # Create a bar for each category in each group.
-    ax.bar(x - 1.5*width, vals_array[:, 0], width, label='precision')
-    ax.bar(x - 0.5*width, vals_array[:, 1], width, label='recall')
+    ax.bar(x - 1.5*width, precision, width, label='precision')
+    ax.bar(x - 0.5*width, recall, width, label='recall')
+    ax.bar(x + 0.5*width, accuracy, width, label='accuracy')
+
+    #ax.bar(x - 1.5*width, vals_array[:, 0], width, label='precision')
+    #ax.bar(x - 0.5*width, vals_array[:, 1], width, label='recall')
+    #ax.bar(x + 0.5*width, vals_array[:, 2], width, label='accuracy')
     #ax.bar(x + 0.5*width, vals_array[:, 2], width, label='FP')
     #ax.bar(x + 1.5*width, vals_array[:, 3], width, label='FN')
 
@@ -90,7 +106,7 @@ def generate_precision_recall_chart(vals):
     ax.set_xticks(x)
     ax.set_xticklabels([f'Attr {i}' for i in range(num_attributes)], rotation=45)
 
-    ax.set_ylabel('Count')
+    ax.set_ylabel('Performance')
     ax.set_title('Precision and Recall for Each Attribute')
     ax.legend()
 
