@@ -6,12 +6,15 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np 
+
+from torch.utils.data import DataLoader, Subset
+import torch
+
 # Create a simple synthetic dataset
 # We'll create two clusters in 2D space:
 # - Cluster for class 0 centered at (-1, -1)
 # - Cluster for class 1 centered at (1, 1)
 torch.manual_seed(42)
-
 
 
 
@@ -64,8 +67,7 @@ def get_flattened_embedding(model: nn.Module, x: torch.Tensor, layer_ind: int):
     return embedding
 
 
-from torch.utils.data import DataLoader, Subset
-import torch
+
 
 def get_batched_embeddings(model, dataset, indices, layer_ind, batch_size=64, device='cuda', loader = None, verbose=True):
     if loader is None:
@@ -241,7 +243,7 @@ class MLP(nn.Module):
         return torch.sigmoid(self.fc2(x))
     
 
-def train_model(model, dataset, labels, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), num_epochs = 1000, verbose = True,SGD=False):
+def train_model(model, dataset, labels, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), num_epochs = 1000, verbose = True, SGD=False):
     dataset = torch.as_tensor(dataset)
     labels = torch.as_tensor(labels)
 
@@ -264,7 +266,6 @@ def train_model(model, dataset, labels, device = torch.device("cuda" if torch.cu
         optimizer = optim.SGD(model.parameters(), lr=0.1)
     else:
         # adam optimizer
-        print(f"using adam:")
         optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # Training loop
@@ -291,6 +292,11 @@ def train_model(model, dataset, labels, device = torch.device("cuda" if torch.cu
             print(f'Accuracy: {accuracy.item() * 100:.2f}%')
 
     return accuracy.item() * 100, model 
+
+def evaluate(model):
+    model.eval()
+    
+
 
 def train_logistic_regression(dataset, labels, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), num_epochs = 1000, verbose= True, SGD= False):
     input_dim = dataset.shape[1]
