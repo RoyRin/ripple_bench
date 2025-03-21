@@ -367,3 +367,7 @@ def mlp_probe(model, layer_ind, pos_indices, neg_indices, dataset, device = torc
     return test_MLP_probe(probe_dataset, probe_labels, model, num_epochs= num_epochs, verbose= verbose, SGD=SGD)
 
         
+
+def generate_hard_negative_mining_dataset():
+    raise NotImplementedError("This function is not implemented yet.")
+    pass 
