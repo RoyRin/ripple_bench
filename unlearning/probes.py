@@ -371,3 +371,37 @@ def mlp_probe(model, layer_ind, pos_indices, neg_indices, dataset, device = torc
 def generate_hard_negative_mining_dataset():
     raise NotImplementedError("This function is not implemented yet.")
     pass 
+
+
+
+def plot_probes(pos_indices, neg_indices, model, val_dataset, device = torch.device("cuda" if torch.cuda.is_available() else "cpu")):
+    pt_count = 650
+    pos_n  = len(pos_indices)
+    neg_n  = len(neg_indices)
+    pt_count = min(pos_n, neg_n, pt_count)
+
+    #pt_count = 100
+    model_layer_count = get_layer_count(model)
+    #probe_dataset, labels_ = probes.set_up_probe_dataset(model=model, layer_ind = model_layer_count - 2, pos_points=pos_points[:pt_count], neg_points=neg_points[:pt_count], device=DEVICE)
+
+    # HACK
+    model_layers = list(range(7, model_layer_count))
+    
+    probe_accs = []
+    for layer_ind in model_layers:
+        embedding_size = get_embedding_size(model, layer_ind)
+        print(f"layer_ind - {layer_ind} ; embedding_size : {embedding_size}")
+
+        probe_acc = mlp_probe(model=model, layer_ind = layer_ind, pos_indices=pos_indices[:pt_count], neg_indices=neg_indices[:pt_count], dataset= val_dataset,device=device, verbose = True, num_epochs = 750, SGD= False)[0]
+        probe_accs.append(probe_acc)
+        print(f"probe acc - {probe_acc}")
+        print("----")
+
+
+    probe_accs = np.array(probe_accs)
+    plt.plot(model_layers, probe_accs)
+    plt.xlabel("Layer index")
+    plt.ylabel("Probe accuracy")
+    plt.title("Probe accuracy across layers")
+    #plt.show()
+    return probe_accs
