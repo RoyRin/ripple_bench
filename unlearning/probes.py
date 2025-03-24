@@ -382,7 +382,7 @@ def plot_probes(pos_indices, neg_indices, model, val_dataset, device = torch.dev
 
     #pt_count = 100
     model_layer_count = get_layer_count(model)
-    #probe_dataset, labels_ = probes.set_up_probe_dataset(model=model, layer_ind = model_layer_count - 2, pos_points=pos_points[:pt_count], neg_points=neg_points[:pt_count], device=DEVICE)
+    #probe_dataset, labels_ = set_up_probe_dataset(model=model, layer_ind = model_layer_count - 2, pos_points=pos_points[:pt_count], neg_points=neg_points[:pt_count], device=DEVICE)
 
     # HACK
     model_layers = list(range(7, model_layer_count))
@@ -405,3 +405,51 @@ def plot_probes(pos_indices, neg_indices, model, val_dataset, device = torch.dev
     plt.title("Probe accuracy across layers")
     #plt.show()
     return probe_accs
+
+
+
+
+def eval_probe(model, probe_model, val_probe_loader, device, layer_ind, max_steps = None):
+    # evaluate probe model on val:
+    probe_model.eval()
+    correct = 0
+    total = 0
+    report_every = (len(val_probe_loader) // 10) +1
+    with torch.no_grad():
+        for val_step, (images, labels) in enumerate(val_probe_loader):
+            if val_step % report_every == 0:
+                print(f"val step - {val_step}/ {len(val_probe_loader)}")
+            if max_steps and (val_step > max_steps):
+                break 
+
+            embeddings = []
+            for image in images:
+                embedding = get_flattened_embedding(model, layer_ind=layer_ind, x=image.unsqueeze(0).to(device))
+                embeddings.append(embedding)
+            embeddings = torch.cat(embeddings, dim=0)
+            
+            outputs = probe_model(embeddings)
+            predicted = (outputs > 0.5).float()
+            
+            total += labels.size(0)
+            correct += (predicted.squeeze() == labels.to(device)).sum().item()
+    return correct, total
+
+
+def train_probe(probe_model, model, probe_dataset, probe_labels, layer_ind, device):
+    embedding_dataset =[]
+    for ii, (image, label) in enumerate(probe_dataset):
+        embedding = get_flattened_embedding(model, layer_ind=layer_ind, x=image.unsqueeze(0).to(device))
+        embedding_dataset.append((embedding, label))
+        if ii % (len(probe_dataset)//10) == 0:
+            print(f"embedding {ii}/{len(probe_dataset)}")
+
+    embedding_dataset= torch.cat([x[0] for x in embedding_dataset], dim=0)
+    #embedding_dataset.shape
+    #probe_model = MLP(input_dim=embedding_size, hidden_dim=128)
+    #probe_model = probe_model.to(device)
+
+
+    probe_acc, probe_model = train_model(probe_model, embedding_dataset, probe_labels, num_epochs=100)
+    
+    return probe_model

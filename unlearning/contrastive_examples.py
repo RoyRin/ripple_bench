@@ -8,8 +8,9 @@ import torchvision.transforms as transforms
 from PIL import Image
 import numpy as np
 import os
-import probes
+from unlearning import probes
 
+from collections import defaultdict
 
 
 class ImageSearch:
@@ -51,7 +52,7 @@ class ImageSearch:
 
 
 def build_positive_examples_db(probe_dataset, probe_labels, model, layer_ind):
-    model_layer_count = probes.get_model_layer_count(model)
+    model_layer_count = probes.get_layer_count(model)
     print(f"model_layer_count- {model_layer_count}")
     print(f"init")
 
@@ -71,3 +72,78 @@ def build_positive_examples_db(probe_dataset, probe_labels, model, layer_ind):
         search_engine.add_embedding(embedding = embedding, image_index = ii)
     # add an embedding
     return search_engine
+
+def find_closest_examples(search_engine, probe_dataset, probe_labels, N = 1000):
+    nearest_distances = defaultdict(lambda: 1000000)
+
+    for ii, (embedding, embedding_label) in enumerate(zip(probe_dataset, probe_labels)):
+        if embedding_label == 1: # only negative labels
+            continue
+        if ii % (N//10) == 0:
+            print(f"embedding {ii}/{N}")
+        
+        results = search_engine.search_embedding(query_embedding = embedding, top_k=5)
+        for (ind, dist) in results:
+            if ind == ii:
+                continue
+            nearest_distances[ind] = min(nearest_distances[ind], dist)
+
+    ordered_nearest_distances = sorted(nearest_distances.items(), key=lambda x: x[1])
+    closest_neg_indices = [x[0] for x in ordered_nearest_distances[:N]]
+    return closest_neg_indices
+
+
+def create_probe_dataset_random_points(dataset, labels, model, layer_ind, attribute_index, N = 1000):
+    """
+    Construct a dataset for the probe by randomly selecting all the positive points, and random negative examples from the validation dataset.
+    """
+
+    positive_attributes = labels[:, attribute_index] == 1
+    negative_attributes = labels[:, attribute_index] == 0
+    #
+    pos_indices = torch.where(positive_attributes)[0]
+    neg_indices = torch.where(negative_attributes)[0]
+    #
+    N = min(N, len(pos_indices))
+    
+    # shuffle pos_indices
+    np.random.shuffle(pos_indices)
+    np.random.shuffle(neg_indices)
+
+
+    ## base probe
+    #shuffle neg_indices, choose 1000 random points from neg_indices
+    neg_indices_normal = np.random.choice(neg_indices, size=N  , replace=False)
+
+
+    normal_probe_dataset, normal_probe_dataset_labels = probes.set_up_probe_dataset(model, layer_ind, pos_indices=pos_indices[:N], neg_indices=neg_indices_normal, dataset = dataset, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), verbose = True)
+
+    return normal_probe_dataset, normal_probe_dataset_labels
+
+
+
+def create_probe_dataset_contrastive_examples(dataset, labels, model, layer_ind, attribute_index, N = 1000):
+    """
+    Construct a dataset for the probe by randomly selecting all the positive points, and the closest negative examples to the positive examples, in the dataset validation dataset.
+    """
+
+    positive_attributes = labels[:, attribute_index] == 1
+    negative_attributes = labels[:, attribute_index] == 0
+    #
+    pos_indices = torch.where(positive_attributes)[0]
+    neg_indices = torch.where(negative_attributes)[0]
+    #    
+    # shuffle pos_indices
+    np.random.shuffle(pos_indices)
+    np.random.shuffle(neg_indices)
+
+    # search the negative examples, for closest examples to the positive examples 
+    search_engine = build_positive_examples_db(dataset, labels, model, layer_ind)
+    closest_neg_indices = find_closest_examples(search_engine, dataset, labels, N = N)
+
+    
+    # create probe dataset of these closest_neg_attributes, and positive images
+
+    closest_probe_dataset, closest_probe_dataset_labels = probes.set_up_probe_dataset(model, layer_ind, pos_indices=pos_indices, neg_indices=closest_neg_indices, dataset = dataset, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), verbose = True)
+    return closest_probe_dataset, closest_probe_dataset_labels
+
