@@ -170,7 +170,6 @@ def search_demo(search_engine, probe_dataset, probe_labels, N = 1000):
         # test it out 
     search_engine.search_embedding(query_embedding =  probe_dataset[-1], top_k=5)
     from collections import defaultdict
-    seen = set()
     nearest_distances = defaultdict(lambda: 1000000)
 
     for ii, (embedding, embedding_label) in enumerate(zip(probe_dataset, probe_labels)):
@@ -192,3 +191,37 @@ def search_demo(search_engine, probe_dataset, probe_labels, N = 1000):
     plt.ylabel("Count")
     plt.title("Histogram of Nearest Distances")
     plt.show()
+
+
+
+def create_probe_dataset_contrastive_examples(dataset, labels, model, layer_ind, attribute_index, N = 1000, N_to_search= 2000):
+    """
+    Construct a dataset for the probe by randomly selecting all the positive points, and the closest negative examples to the positive examples, in the dataset validation dataset.
+
+    N_to_search - number of negative examples to search
+    """
+
+    positive_attributes = labels[:, attribute_index] == 1
+    negative_attributes = labels[:, attribute_index] == 0
+    #
+    pos_indices = torch.where(positive_attributes)[0]
+    neg_indices = torch.where(negative_attributes)[0]
+    #    
+    # shuffle pos_indices
+    np.random.shuffle(pos_indices)
+    np.random.shuffle(neg_indices)
+
+    probe_labels = labels[:, attribute_index] == 1
+    print(f"probe_labels {len(probe_labels)} ; {type(probe_labels)}")
+    # search the negative examples, for closest examples to the positive examples 
+    search_engine = build_positive_examples_db_from_model(dataset=dataset,model= model, positive_indices=pos_indices[:N_to_search], layer_ind = layer_ind)
+
+    print(f"built search engine")
+    closest_neg_indices = find_closest_examples(search_engine=search_engine, dataset=dataset, neg_indices = neg_indices[:N_to_search], layer_ind=layer_ind, model= model, top_N = N)
+    print(f"len(closest_neg_indices) - {len(closest_neg_indices)}")
+    
+    # create probe dataset of these closest_neg_attributes, and positive images
+    print(f"closest_neg_indices -{len(closest_neg_indices)}")
+
+    closest_probe_dataset, closest_probe_dataset_labels = probes.set_up_probe_dataset(model, layer_ind, pos_indices=pos_indices[:N], neg_indices=closest_neg_indices, dataset = dataset, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), verbose = True)
+    return closest_probe_dataset, closest_probe_dataset_labels
