@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import torch
-
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
 
 import torch
 import torch.nn as nn
@@ -17,6 +18,20 @@ import torch
 torch.manual_seed(42)
 
 
+class CustomLabeledDataset(Dataset):
+    def __init__(self, base_dataset, indices, custom_labels):
+        self.base_dataset = base_dataset
+        self.indices = indices
+        self.custom_labels = custom_labels
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, idx):
+        data, _ = self.base_dataset[self.indices[idx]]  # Ignore original label
+        label = self.custom_labels[idx]
+        return data, label
+    
 
 def get_nth_to_last_embedding(model, x, layer_ind=-1):
     """
