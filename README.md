@@ -21,7 +21,7 @@ While `poetry` is used to manage the dependencies, and the authors use poetry, t
 
 
 
-Both of these methods for installation installs scripts for executing `private-pca`, and puts them on your `PYTHONPATH`. Running `poetry shell` or `source venv/bin/activate` will shell into the virtual environments with the code installed, and will allow you to run the executables directly.
+Running `poetry shell` or `source venv/bin/activate` will shell into the virtual environments with the code installed, and will allow you to run the executables directly.
 
 
 
