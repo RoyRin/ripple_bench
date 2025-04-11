@@ -7,6 +7,7 @@ readme = "README.md"
 
 packages = [
 	{include = "unlearning"},
+
 ]
 
 
@@ -25,6 +26,10 @@ scikit-learn = "^1.6.1"
 requests = "^2.32.3"
 gdown = "^5.2.0"
 seaborn = "^0.13.2"
+
+wiki-rag = { path = "./wiki-rag", develop = true }
+
+
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.5"
