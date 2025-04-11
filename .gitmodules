@@ -1,3 +1,6 @@
 [submodule "unlearning/open-unlearning"]
 	path = unlearning/open-unlearning
 	url = git@github.com:locuslab/open-unlearning.git
+[submodule "wiki-rag"]
+	path = wiki-rag
+	url = git@github.com:RoyRin/wiki-rag.git

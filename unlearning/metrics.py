@@ -62,7 +62,7 @@ Answer:
             batch = []
 
 
-def prepare_data_wmdp(data, batch_size=8):
+def prepare_data_wmdp(data, batch_size=8, verbose= False):
     """
     Return a generator of batches of the form (text_batch, answers_batch)
     """
@@ -82,8 +82,9 @@ def prepare_data_wmdp(data, batch_size=8):
     Answer:
     """
             ans = row['answer']
-            print(f"question: {question}")
-            print(f"answer: {ans}")
+            if verbose:
+                print(f"question: {question}")
+                print(f"answer: {ans}")
             batch.append((question, ans))
             if len(batch) == batch_size:
                 yield batch
@@ -132,7 +133,7 @@ Answer:
             yield batch
             batch = []
 
-def get_accuracy(model, tokenizer,  batches, network=None, N= None):
+def get_accuracy(model, tokenizer,  batches, network=None, N= None, verbose = False):
 
     # get token idxs for A, B, C, D
     A_idx = tokenizer.encode("A")[-1]
@@ -143,11 +144,10 @@ def get_accuracy(model, tokenizer,  batches, network=None, N= None):
 
 
     corrects = []
-    for i, batch in enumerate(batches):
-        if i > N:
-            print(f"i{i}")
+    for i, batch in tqdm(enumerate(batches)):
+        if i > N :
             break
-        if i % 10 == 0 and i > 0:
+        if i % 10 == 0 and i > 0 and verbose:
             print(f"{i}/ {N}; {len(corrects)}", end='\r')
         texts = [x[0] for x in batch]
         answers = t.tensor([x[1] for x in batch]).to(model.device)
@@ -159,9 +159,11 @@ def get_accuracy(model, tokenizer,  batches, network=None, N= None):
                 with network:
                     outputs = model(**inputs).logits[:, -1, choice_idxs]    
         predictions = outputs.argmax(dim=-1)
-        print(f"predictions: {predictions}")
         corrects.extend((predictions == answers).tolist())
-        print(f"corrects: {corrects}")
+        
+        if verbose:
+            print(f"predictions: {predictions}")
+            print(f"corrects: {corrects}")
     return corrects
 
 def get_accuracy_binary(model, tokenizer,  batches, network=None):
