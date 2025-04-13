@@ -62,17 +62,26 @@ Facts:
     return bullet_lines
 
 
+
+
 if __name__ == "__main__":
+    
     print(f"Starting dual use facts dataset construction")
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
     code_dir = Path("/n/home04/rrinberg/code/data_to_concept_unlearning/unlearning")
     safe_dual_use_facts_path = code_dir/ f"safe_facts_dual_use_df_bio__{date_str}.json"
 
+    ###
     # get Dual Use Facts
+    ###
+    
     dual_use_path = "/n/home04/rrinberg/code/data_to_concept_unlearning/notebooks/dual_use_df_bio.json"
     dual_use_df = pd.read_json(dual_use_path, orient="records", lines=True)
     
+    ##
     # load RAG 
+    ##
+    
     faiss_path = Path(f"/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia/") / "faiss_index__top_10000000__2025-04-11"
     
     print(f"loading vectorstore from {faiss_path}")
@@ -80,7 +89,9 @@ if __name__ == "__main__":
     )
     print(f"loading model")
     
+    ##
     # load model for summarizing
+    ##
     model_id = 'HuggingFaceH4/zephyr-7b-beta'
     device = 'cuda:0'
     dtype= torch.float32
@@ -94,10 +105,35 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained(model_id, 
                                             use_fast=False)
     
+    
+    ##
+    # Load backup Wikipedia 
+    ##
+        
+    data_cache= Path("/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia")
+    json_dir = data_cache / 'json'
+    # HACK - hardcode location 
+    asset_dir = Path("/n/home04/rrinberg/code/data_to_concept_unlearning/wiki-rag/assets")
+    title_to_file_path_f = asset_dir / 'title_to_file_path.json'
+    title_to_file_path_f_pkl = asset_dir / 'title_to_file_path.pkl'
+
+    output_f = asset_dir / 'english_pageviews.csv'
+    stats_f = asset_dir / 'pageviews-20241201-000000'
+    print(f"loading english df from {output_f}")
+    english_df = rag_wikipedia.get_sorted_english_df(output_f, stats_f) # output - where to output, stats_f base
+
+    print(f"loading wiki index from {title_to_file_path_f_pkl}")
+
+    title_to_file_path = rag_wikipedia.get_title_to_path_index(json_dir, title_to_file_path_f_pkl)
+
+
+    # Good to Go!
+
+
     num_docs_per_subject = 1
     # check if dataset already loaded
     topics_seen = set()
-    
+    print(f"will be saving to : {safe_dual_use_facts_path}")
     dual_use_facts_dataset = []
 
     if Path(safe_dual_use_facts_path).exists():
@@ -124,11 +160,16 @@ if __name__ == "__main__":
         topics_seen.add(safe_topic)
         
         resp = vectorstore.similarity_search(query, k=10)
-        for i in range(num_docs_per_subject):
-            doc = resp[i]
+        for resp_i in range(num_docs_per_subject):
+            doc = resp[resp_i]
             wiki_title = doc.metadata['title']
-            
-            wiki_text = wikipedia.page(wiki_title).content
+            try:
+                wiki_text = wikipedia.page(wiki_title).content
+            except Exception as e:
+                print(f"Error loading Wikipedia page for {wiki_title}: {e}")
+                print(f"loading from local store")
+                wiki_text_d = rag_wikipedia.get_wiki_page(wiki_title, title_to_file_path)
+                wiki_text = wiki_text_d.get('text', '')
 
             facts = extract_bulleted_facts(wiki_text, summarizing_model, tokenizer, max_new_tokens = 1000)
 
@@ -138,9 +179,13 @@ if __name__ == "__main__":
                 "facts": facts
             }
             dual_use_facts_dataset.append(entry)
-        
+        if i % 5 ==0 :
+            # save the dual_use_facts_dataset
+            print(f"saving to {safe_dual_use_facts_path}")
+            dual_use_facts_df = pd.DataFrame(dual_use_facts_dataset)
+            dual_use_facts_df.to_json(safe_dual_use_facts_path, orient="records", lines=True)
+
     # save the dual_use_facts_dataset
     print(f"saving to {safe_dual_use_facts_path}")
     dual_use_facts_df = pd.DataFrame(dual_use_facts_dataset)
     dual_use_facts_df.to_json(safe_dual_use_facts_path, orient="records", lines=True)
-    
