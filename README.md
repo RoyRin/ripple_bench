@@ -25,4 +25,9 @@ Running `poetry shell` or `source venv/bin/activate` will shell into the virtual
 
 
 
+# Todo
+1. Goal- build finetuning dataset on dual-use facts
+ Test out that you can construct facts from a wikipedia page, using an LLM (and it's not too expensive, if we need to use OpenAI). 
+2. evaluate the finetuned model on WMDP and on the safe dataset
+2. Construct a synthetic dataset, using Ekdeeps reasoning, with examples of functions 
 

@@ -33,7 +33,8 @@ B. {df_row['choices'][1]}
 C. {df_row['choices'][2]}
 D. {df_row['choices'][3]}
 Answer:
-""" #  {df_row['answer']}
+    {df_row['answer']}
+""" #  
     if verbose:
         print(text)
     return text
@@ -132,6 +133,34 @@ Answer:
         if len(batch) == batch_size:
             yield batch
             batch = []
+
+def answer_single_question(model, tokenizer,  prompt, network=None, N= None, verbose = False):
+
+    # get token idxs for A, B, C, D
+    A_idx = tokenizer.encode("A")[-1]
+    B_idx = tokenizer.encode("B")[-1]
+    C_idx = tokenizer.encode("C")[-1]
+    D_idx = tokenizer.encode("D")[-1]
+    tokenizer.convert_ids_to_tokens([A_idx, B_idx, C_idx, D_idx])
+    
+    choice_idxs = t.tensor([A_idx, B_idx, C_idx, D_idx]).to(model.device)
+
+    
+
+    #texts = [x[0] for x in batch]
+    #answers = t.tensor([x[1] for x in batch]).to(model.device)
+    
+    inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(model.device)
+    with torch.no_grad():
+        if network is None:
+            outputs = model(**inputs).logits[:, -1, choice_idxs]
+        else:
+            with network:
+                outputs = model(**inputs).logits[:, -1, choice_idxs]    
+    predictions = outputs.argmax(dim=-1)
+    
+    return predictions
+    
 
 def get_accuracy(model, tokenizer,  batches, network=None, N= None, verbose = False):
 
