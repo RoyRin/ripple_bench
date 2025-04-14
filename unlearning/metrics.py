@@ -174,7 +174,7 @@ def get_accuracy(model, tokenizer,  batches, network=None, N= None, verbose = Fa
 
     corrects = []
     for i, batch in tqdm(enumerate(batches)):
-        if i > N :
+        if N is not None and i > N :
             break
         if i % 10 == 0 and i > 0 and verbose:
             print(f"{i}/ {N}; {len(corrects)}", end='\r')

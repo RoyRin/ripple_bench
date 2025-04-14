@@ -65,17 +65,22 @@ Facts:
 
 
 if __name__ == "__main__":
+    suffix = ""
+    
+    suffix = "__question_only"
     
     print(f"Starting dual use facts dataset construction")
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
     code_dir = Path("/n/home04/rrinberg/code/data_to_concept_unlearning/unlearning")
-    safe_dual_use_facts_path = code_dir/ f"safe_facts_dual_use_df_bio__{date_str}.json"
+    safe_dual_use_facts_path = code_dir/ f"safe_facts_dual_use_df_bio{suffix}__{date_str}.json"
 
     ###
     # get Dual Use Facts
     ###
     
-    dual_use_path = "/n/home04/rrinberg/code/data_to_concept_unlearning/notebooks/dual_use_df_bio.json"
+    dual_use_path = f"/n/home04/rrinberg/code/data_to_concept_unlearning/notebooks/dual_use_df_bio{suffix}.json"
+    
+    
     dual_use_df = pd.read_json(dual_use_path, orient="records", lines=True)
     
     ##
