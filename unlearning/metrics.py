@@ -92,6 +92,7 @@ def prepare_data_wmdp(data, batch_size=8, verbose= False):
                 batch = []
         except:
             pass
+        
 def prepare_data_hp(data, batch_size=8):
     """
     Return a generator of batches of the form (text_batch, answers_batch)
