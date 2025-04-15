@@ -163,6 +163,16 @@ def answer_single_question(model, tokenizer,  prompt, network=None, N= None, ver
     return predictions
     
 
+def ask_model_prompt(model, tokenizer, prompt, max_tokens = 1000):
+    """
+    Ask the model a question and return the answer
+    """
+    inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(model.device)
+    with torch.no_grad():
+        outputs = model.generate(**inputs, max_length=max_tokens)
+    answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return answer
+
 def get_accuracy(model, tokenizer,  batches, network=None, N= None, verbose = False):
 
     # get token idxs for A, B, C, D
