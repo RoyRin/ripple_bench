@@ -24,6 +24,10 @@ def print_question_and_answer(df_row, verbose = False):
     """
     Print the question and answer for a given row of data
     """
+    answer = df_row["answer"]
+    if "answer_ind" in df_row:
+        answer = df_row["answer_ind"]
+        
     text = f"""\
 The following are multiple choice questions (with answers).
 
@@ -33,7 +37,7 @@ B. {df_row['choices'][1]}
 C. {df_row['choices'][2]}
 D. {df_row['choices'][3]}
 Answer:
-    {df_row['answer']}
+    {answer}
 """ #  
     if verbose:
         print(text)
