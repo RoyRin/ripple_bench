@@ -1,4 +1,4 @@
-## USE LM-EVAL-HARNESS 
+## USE LM-EVAL-HARNESS
 # THIS IS NOT FOR MAIN EVALUATION
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -13,21 +13,17 @@ import csv
 import json
 import random
 
-ans_map = {
-    'A': 0,
-    'B': 1,
-    'C': 2,
-    'D': 3
-}
+ans_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
 
-def print_question_and_answer(df_row, verbose = False):
+
+def print_question_and_answer(df_row, verbose=False):
     """
     Print the question and answer for a given row of data
     """
     answer = df_row["answer"]
     if "answer_ind" in df_row:
         answer = df_row["answer_ind"]
-        
+
     text = f"""\
 The following are multiple choice questions (with answers).
 
@@ -38,10 +34,11 @@ C. {df_row['choices'][2]}
 D. {df_row['choices'][3]}
 Answer:
     {answer}
-""" #  
+""" #
     if verbose:
         print(text)
     return text
+
 
 def prepare_data(data, batch_size=8):
     """
@@ -67,7 +64,7 @@ Answer:
             batch = []
 
 
-def prepare_data_wmdp(data, batch_size=8, verbose= False):
+def prepare_data_wmdp(data, batch_size=8, verbose=False):
     """
     Return a generator of batches of the form (text_batch, answers_batch)
     """
@@ -96,7 +93,8 @@ def prepare_data_wmdp(data, batch_size=8, verbose= False):
                 batch = []
         except:
             pass
-        
+
+
 def prepare_data_hp(data, batch_size=8):
     """
     Return a generator of batches of the form (text_batch, answers_batch)
@@ -119,6 +117,7 @@ Answer:
             yield batch
             batch = []
 
+
 def prepare_data_truthfulqa(data, batch_size=8):
     """
     Return a generator of batches of the form (text_batch, answers_batch)
@@ -139,7 +138,13 @@ Answer:
             yield batch
             batch = []
 
-def answer_single_question(model, tokenizer,  prompt, network=None, N= None, verbose = False):
+
+def answer_single_question(model,
+                           tokenizer,
+                           prompt,
+                           network=None,
+                           N=None,
+                           verbose=False):
 
     # get token idxs for A, B, C, D
     A_idx = tokenizer.encode("A")[-1]
@@ -147,37 +152,43 @@ def answer_single_question(model, tokenizer,  prompt, network=None, N= None, ver
     C_idx = tokenizer.encode("C")[-1]
     D_idx = tokenizer.encode("D")[-1]
     tokenizer.convert_ids_to_tokens([A_idx, B_idx, C_idx, D_idx])
-    
-    choice_idxs = t.tensor([A_idx, B_idx, C_idx, D_idx]).to(model.device)
 
-    
+    choice_idxs = t.tensor([A_idx, B_idx, C_idx, D_idx]).to(model.device)
 
     #texts = [x[0] for x in batch]
     #answers = t.tensor([x[1] for x in batch]).to(model.device)
-    
-    inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(model.device)
+
+    inputs = tokenizer(prompt, return_tensors="pt",
+                       padding=True).to(model.device)
     with torch.no_grad():
         if network is None:
             outputs = model(**inputs).logits[:, -1, choice_idxs]
         else:
             with network:
-                outputs = model(**inputs).logits[:, -1, choice_idxs]    
+                outputs = model(**inputs).logits[:, -1, choice_idxs]
     predictions = outputs.argmax(dim=-1)
-    
-    return predictions
-    
 
-def ask_model_prompt(model, tokenizer, prompt, max_tokens = 1000):
+    return predictions
+
+
+def ask_model_prompt(model, tokenizer, prompt, max_tokens=1000):
     """
     Ask the model a question and return the answer
     """
-    inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(model.device)
+    inputs = tokenizer(prompt, return_tensors="pt",
+                       padding=True).to(model.device)
     with torch.no_grad():
         outputs = model.generate(**inputs, max_length=max_tokens)
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return answer
 
-def get_accuracy(model, tokenizer,  batches, network=None, N= None, verbose = False):
+
+def get_accuracy(model,
+                 tokenizer,
+                 batches,
+                 network=None,
+                 N=None,
+                 verbose=False):
 
     # get token idxs for A, B, C, D
     A_idx = tokenizer.encode("A")[-1]
@@ -186,31 +197,32 @@ def get_accuracy(model, tokenizer,  batches, network=None, N= None, verbose = Fa
     D_idx = tokenizer.encode("D")[-1]
     choice_idxs = t.tensor([A_idx, B_idx, C_idx, D_idx]).to(model.device)
 
-
     corrects = []
     for i, batch in tqdm(enumerate(batches)):
-        if N is not None and i > N :
+        if N is not None and i > N:
             break
         if i % 10 == 0 and i > 0 and verbose:
             print(f"{i}/ {N}; {len(corrects)}", end='\r')
         texts = [x[0] for x in batch]
         answers = t.tensor([x[1] for x in batch]).to(model.device)
-        inputs = tokenizer(texts, return_tensors="pt", padding=True).to(model.device)
+        inputs = tokenizer(texts, return_tensors="pt",
+                           padding=True).to(model.device)
         with torch.no_grad():
             if network is None:
                 outputs = model(**inputs).logits[:, -1, choice_idxs]
             else:
                 with network:
-                    outputs = model(**inputs).logits[:, -1, choice_idxs]    
+                    outputs = model(**inputs).logits[:, -1, choice_idxs]
         predictions = outputs.argmax(dim=-1)
         corrects.extend((predictions == answers).tolist())
-        
+
         if verbose:
             print(f"predictions: {predictions}")
             print(f"corrects: {corrects}")
     return corrects
 
-def get_accuracy_binary(model, tokenizer,  batches, network=None):
+
+def get_accuracy_binary(model, tokenizer, batches, network=None):
 
     # get token idxs for A, B, C, D
     A_idx = tokenizer.encode("A")[-1]
@@ -218,37 +230,43 @@ def get_accuracy_binary(model, tokenizer,  batches, network=None):
 
     choice_idxs = t.tensor([A_idx, B_idx]).to(model.device)
 
-
     corrects = []
     for batch in batches:
         texts = [x[0] for x in batch]
         answers = t.tensor([x[1] for x in batch]).to(model.device)
-        inputs = tokenizer(texts, return_tensors="pt", padding=True).to(model.device)
+        inputs = tokenizer(texts, return_tensors="pt",
+                           padding=True).to(model.device)
         with torch.no_grad():
             if network is None:
                 outputs = model(**inputs).logits[:, -1, choice_idxs]
             else:
                 with network:
-                    outputs = model(**inputs).logits[:, -1, choice_idxs]    
+                    outputs = model(**inputs).logits[:, -1, choice_idxs]
         predictions = outputs.argmax(dim=-1)
         corrects.extend((predictions == answers).tolist())
     return corrects
 
 
-def get_wmdp_accuracy(model, tokenizer, network=None, batch_size = 5, dtype = torch.bfloat16, device = 'cuda:0', verbose=False, 
-                      bio='../data/wmdp/bio-questions.json',
-                      cyber='../data/wmdp/cyber-questions.json',
-                     ):
+def get_wmdp_accuracy(
+    model,
+    tokenizer,
+    network=None,
+    batch_size=5,
+    dtype=torch.bfloat16,
+    device='cuda:0',
+    verbose=False,
+    bio='../data/wmdp/bio-questions.json',
+    cyber='../data/wmdp/cyber-questions.json',
+):
     t.set_grad_enabled(False)
     corrects = {}
     accs = []
     for data_path in ([
-                        bio,
-                        cyber,
-                        
-                      ]):
+            bio,
+            cyber,
+    ]):
         if 'bio' in data_path:
-            batch_size_ = batch_size*5
+            batch_size_ = batch_size * 5
         else:
             batch_size_ = batch_size
         with open(data_path, "r") as fp:
@@ -256,7 +274,9 @@ def get_wmdp_accuracy(model, tokenizer, network=None, batch_size = 5, dtype = to
 
         batches = prepare_data_wmdp(reader, batch_size_)
         corrects[data_path] = get_accuracy(model, tokenizer, batches, network)
-        print(f"Accuracy for {os.path.basename(data_path).replace('.json','')}: {sum(corrects[data_path]) / len(corrects[data_path]):.3f}")
+        print(
+            f"Accuracy for {os.path.basename(data_path).replace('.json','')}: {sum(corrects[data_path]) / len(corrects[data_path]):.3f}"
+        )
         accs.append(sum(corrects[data_path]) / len(corrects[data_path]))
     all_corrects = [x for sublist in corrects.values() for x in sublist]
     if verbose:
@@ -264,7 +284,15 @@ def get_wmdp_accuracy(model, tokenizer, network=None, batch_size = 5, dtype = to
     return accs, sum(all_corrects) / len(all_corrects)
 
 
-def get_mmlu_accuracy(model, tokenizer, network=None, data_dir='../data/mmlu/test', batch_size = 5, dtype = torch.bfloat16, device = 'cuda:0', verbose=False, log_subclasses=False):
+def get_mmlu_accuracy(model,
+                      tokenizer,
+                      network=None,
+                      data_dir='../data/mmlu/test',
+                      batch_size=5,
+                      dtype=torch.bfloat16,
+                      device='cuda:0',
+                      verbose=False,
+                      log_subclasses=False):
 
     t.set_grad_enabled(False)
     corrects = {}
@@ -276,44 +304,67 @@ def get_mmlu_accuracy(model, tokenizer, network=None, data_dir='../data/mmlu/tes
             batches = prepare_data(reader, batch_size)
             corrects[file] = get_accuracy(model, tokenizer, batches, network)
             if verbose:
-                print(f"Accuracy for {file}: {sum(corrects[file]) / len(corrects[file]):.2f}")
+                print(
+                    f"Accuracy for {file}: {sum(corrects[file]) / len(corrects[file]):.2f}"
+                )
             classes[file] = sum(corrects[file]) / len(corrects[file])
     all_corrects = [x for sublist in corrects.values() for x in sublist]
 
-    print(f"Overall MMLU accuracy: {sum(all_corrects) / len(all_corrects):.3f}")
+    print(
+        f"Overall MMLU accuracy: {sum(all_corrects) / len(all_corrects):.3f}")
     if log_subclasses:
         return classes, sum(all_corrects) / len(all_corrects)
     return sum(all_corrects) / len(all_corrects)
 
 
-def get_hp_accuracy(model, tokenizer, network=None, batch_size = 5, dtype = torch.bfloat16, device = 'cuda:0', verbose=False, data_path = '../data/harrypotter/hp-questions-dual.json'):
+def get_hp_accuracy(model,
+                    tokenizer,
+                    network=None,
+                    batch_size=5,
+                    dtype=torch.bfloat16,
+                    device='cuda:0',
+                    verbose=False,
+                    data_path='../data/harrypotter/hp-questions-dual.json'):
     corrects = {}
     for data_path in ([
-                        data_path,
-                      ]):
+            data_path,
+    ]):
         with open(data_path, "r") as fp:
             reader = json.load(fp)
         if len(reader[0]['choices']) == 2:
             batches = prepare_data_truthfulqa(reader, batch_size)
-            corrects[data_path] = get_accuracy_binary(model, tokenizer, batches, network)
+            corrects[data_path] = get_accuracy_binary(model, tokenizer,
+                                                      batches, network)
         else:
             batches = prepare_data_hp(reader, batch_size)
-            corrects[data_path] = get_accuracy(model, tokenizer, batches, network)
+            corrects[data_path] = get_accuracy(model, tokenizer, batches,
+                                               network)
         if verbose:
-            print(f"Accuracy for {os.path.basename(data_path).replace('.json','')}: {sum(corrects[data_path]) / len(corrects[data_path]):.3f}")
+            print(
+                f"Accuracy for {os.path.basename(data_path).replace('.json','')}: {sum(corrects[data_path]) / len(corrects[data_path]):.3f}"
+            )
     all_corrects = [x for sublist in corrects.values() for x in sublist]
     return sum(all_corrects) / len(all_corrects)
-def get_truthfulqa(model, tokenizer,batch_size=5, network=None, verbose=True,data_path = '../data/truthfulqa/truthfulqa.json'):
+
+
+def get_truthfulqa(model,
+                   tokenizer,
+                   batch_size=5,
+                   network=None,
+                   verbose=True,
+                   data_path='../data/truthfulqa/truthfulqa.json'):
     corrects = {}
-    
+
     with open(data_path, "r") as fp:
         reader = json.load(fp)
 
-    
     batches = prepare_data_truthfulqa(reader, batch_size)
-        
-    corrects[data_path] = get_accuracy_binary(model, tokenizer, batches, network)
+
+    corrects[data_path] = get_accuracy_binary(model, tokenizer, batches,
+                                              network)
     if verbose:
-        print(f"Accuracy for TruthfulQA: {sum(corrects[data_path]) / len(corrects[data_path]):.3f}")
+        print(
+            f"Accuracy for TruthfulQA: {sum(corrects[data_path]) / len(corrects[data_path]):.3f}"
+        )
     all_corrects = [x for sublist in corrects.values() for x in sublist]
     return sum(all_corrects) / len(all_corrects)
