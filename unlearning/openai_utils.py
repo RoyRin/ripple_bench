@@ -28,8 +28,12 @@ def make_openai_request(prompt, OPEN_AI_key, model = "gpt-4o-mini", temperature 
     'Content-Type': 'application/json',
     'api-key': OPEN_AI_key
     }
-    response = requests.request("POST", url, headers=headers, data=payload)
+    try:
+        response = requests.request("POST", url, headers=headers, data=payload)
 
-    content = json.loads(response.text)["choices"][0]["message"]["content"] 
+        content = json.loads(response.text)["choices"][0]["message"]["content"] 
 
-    return content
+        return content
+    except Exception as e:
+        print(f"Error: {e}")
+        return None

@@ -31,3 +31,8 @@ Running `poetry shell` or `source venv/bin/activate` will shell into the virtual
 2. evaluate the finetuned model on WMDP and on the safe dataset
 2. Construct a synthetic dataset, using Ekdeeps reasoning, with examples of functions 
 
+Our goal is to:
+1. be extra precise about what we want
+2. formalize the problem of unlearning to the ELM setting
+3. 
+

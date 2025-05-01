@@ -1,7 +1,7 @@
-import random 
-import pandas as pd 
-
-
+import random
+import pandas as pd
+import numpy as np
+from datetime import datetime
 
 def get_wmdp_question_answer(df, row_index, verbose=True):
     row = df.iloc[row_index]
@@ -35,60 +35,104 @@ def construct_single_dual_use_df_row(question, choices_list):
     return row
 
 
+def get_root_topic(df,
+                   row_ind,
+                   huit_OAI_function,
+                   overall_topic,
+                   question_only=True):
+    question, answer = get_wmdp_question_answer(df, row_ind)
+    
+    prompt = f"What is a {overall_topic}-related Wikipedia headline topic that is relevant to this question relies on: '{question}' Only include the answer, nothing else. Keep it short."
+
+    if not question_only:
+        prompt = f"What is a {overall_topic}-related Wikipedia headline topic that is relevant to this question-answer pair relies on: '{question}' \nAnswer: '{answer}'. Only include the answer, nothing else. Keep it short."
+
+    # TODO : confirm that the I'm stripping the right things
+    # TODO: check if I need to set `store=True,` for the client?
+
+    subject = huit_OAI_function(prompt).strip()
+    return subject
+
+
 def create_dual_use_facts(original_df,
                           row_ind,
                           huit_OAI_function,
                           question_only=True,
-                          topic="biology"):
-    question, answer = get_wmdp_question_answer(original_df, row_ind)
-    prompt = f"extract the subject of this question-answer pair: '{question}' \nAnswer: '{answer}'. Ideally the subject is not a dangerous topic. incorporate information from both the question and answer."
+                          overall_topic="biology"):
 
-    prompt = f"What is a {topic}-related Wikipedia headline topic that is relevant to this question relies on: '{question}'  Only include the answer, nothing else. Keep it short."
-
-    if not question_only:
-        prompt = f"What is a {topic}-related Wikipedia headline topic that is relevant to this question-answer pair relies on: '{question}' \nAnswer: '{answer}'. Only include the answer, nothing else. Keep it short."
-
-    # TODO : confirm that the I'm stripping the right things
-    # TODO: check if I need to set `store=True,` for the client?
-    
-    subject = huit_OAI_function(prompt).strip()
-
-    if False :   # beep boop baap < check this HUIT-flip
-        subject_completion = client.chat.completions.create(model="gpt-4o-mini",
-                                                        store=True,
-                                                        messages=[{
-                                                            "role":
-                                                            "user",
-                                                            "content":
-                                                            prompt
-                                                        }])
-        subject = subject_completion.choices[0].message.content.strip()
-
-
+    subject = get_root_topic(original_df,
+                             row_ind,
+                             overall_topic=overall_topic,
+                             huit_OAI_function=huit_OAI_function,
+                             question_only=question_only)
     #return subject, ""
     dual_use_prompt = f"tell me a 1 true statement and 3 false statement that uses the fact about {subject}. Make the statements not dangerous. Have the true statement be the first one. and separate the responses by `\\n`"
 
-    dual_use_response = huit_OAI_function(dual_use_prompt).strip()
-    if False :
-        dual_use_answers = client.chat.completions.create(model="gpt-4o-mini",
-                                                      store=True,
-                                                      messages=[{
-                                                          "role":
-                                                          "user",
-                                                          "content":
-                                                          dual_use_prompt
-                                                      }])
-        dual_use_response = dual_use_answers.choices[0].message.content.strip()
+    question_about_topic = huit_OAI_function(dual_use_prompt).strip()
 
-    return subject, dual_use_response
+    return subject, question_about_topic
 
 
-def get_dual_use_df(wmdp_df,
-                    row_inds,
-                    df_savepath, 
-                    huit_OAI_function,
-                    dual_use_dataframe=None,
-                    question_only=True):
+def get_topic_df(wmdp_df,
+                 row_inds,
+                 df_savepath,
+                 huit_OAI_function,
+                 overall_topic="biology",
+                 topic_df=None,
+                 question_only=True):
+    """
+    This is broken because it is having a large model just speculate about correct facts, and that isn't grounded (it can be wrong/hallucinate)
+    """
+    subjects = []
+    skip_count = 0
+    start = datetime.now()
+    for row_ind in row_inds:
+        subject_start = datetime.now()
+        if topic_df is not None and row_ind in topic_df['row_ind'].tolist():
+            skip_count += 1
+            if skip_count % 50 == 0:
+                print(f"skipping row_ind- {row_ind}")
+            continue
+
+        subject = get_root_topic(wmdp_df,
+                                 row_ind,
+                                 overall_topic=overall_topic,
+                                 huit_OAI_function=huit_OAI_function,
+                                 question_only=question_only)
+
+        print(f"row_ind- {row_ind}: subject: {subject}")
+
+        subjects.append(subject)
+        #
+        # write to topic_df
+        single_topic_df = pd.DataFrame([{
+            'subject': subject,
+            'row_ind': row_ind
+        }])
+        if topic_df is None:
+            topic_df = single_topic_df
+        else:
+            topic_df = pd.concat([topic_df, single_topic_df],
+                                 ignore_index=True)
+        # save every 10
+        if len(topic_df) % 10 == 0:
+            print(f"Saving topic_df with {len(topic_df)} rows")
+            topic_df.to_json(df_savepath, orient="records", lines=True)
+
+        print(f"dual_use_dataframe shape: {topic_df.shape}")
+        print(f"subject time: {datetime.now() - subject_start}; total time: {datetime.now() - start}")
+    return topic_df, subjects
+
+
+def __get_dual_use_df(wmdp_df,
+                      row_inds,
+                      df_savepath,
+                      huit_OAI_function,
+                      dual_use_dataframe=None,
+                      question_only=True):
+    """
+    This is broken because it is having a large model just speculate about correct facts, and that isn't grounded (it can be wrong/hallucinate)
+    """
     subjects = []
     skip_count = 0
     for row_ind in row_inds:
@@ -100,7 +144,10 @@ def get_dual_use_df(wmdp_df,
             continue
 
         subject, dual_use_response = create_dual_use_facts(
-            wmdp_df, row_ind, huit_OAI_function=huit_OAI_function, question_only=question_only)
+            wmdp_df,
+            row_ind,
+            huit_OAI_function=huit_OAI_function,
+            question_only=question_only)
         print(f"row_ind- {row_ind}: subject: {subject}")
 
         subjects.append(subject)
