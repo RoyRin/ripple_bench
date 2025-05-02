@@ -34,5 +34,12 @@ Running `poetry shell` or `source venv/bin/activate` will shell into the virtual
 Our goal is to:
 1. be extra precise about what we want
 2. formalize the problem of unlearning to the ELM setting
-3. 
 
+
+
+# Ripple Effect measuring
+
+1. extract topics from questions 
+2. generate "hop" topics from topics
+3. extract facts from topics
+4. extract questions from facts

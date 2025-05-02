@@ -30,7 +30,6 @@ def make_openai_request(prompt, OPEN_AI_key, model = "gpt-4o-mini", temperature 
     }
     try:
         response = requests.request("POST", url, headers=headers, data=payload)
-
         content = json.loads(response.text)["choices"][0]["message"]["content"] 
 
         return content

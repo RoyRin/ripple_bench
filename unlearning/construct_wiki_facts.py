@@ -114,30 +114,75 @@ from datetime import datetime
 
 date_str = datetime.now().strftime("%Y-%m-%d")
 # HACK - set title to 750 , even if {fact_length} = 350
-wiki_facts_path = data_cache / f"wiki_facts_750__{date_str}.json"
+
+wiki_facts_path = data_cache / "wiki_facts_750__2025-04-17.json"
+
+#
+# f"wiki_facts_750__{date_str}.json"
+
+
 print(f"wiki_facts_path: {wiki_facts_path}")
 wiki_facts = {}
 if os.path.exists(wiki_facts_path):
     wiki_facts = read_dict(wiki_facts_path)
 
-df_savepath = Path(
-    "/n/home04/rrinberg/code/data_to_concept_unlearning/notebooks"
-) / f"dual_use_df_bio__question_only.json"
 
-dual_use_df = pd.read_json(df_savepath, orient="records", lines=True)
+HOME_DIR = os.path.expanduser("~")
+BASE_DIR = Path(HOME_DIR) / "code/data_to_concept_unlearning/"
+safe_dual_use_facts_dir = BASE_DIR / "safe_facts"
+topic_df_savepath =safe_dual_use_facts_dir/ f"question_topic_df_bio.json"
+topic_df = pd.read_json(topic_df_savepath, orient="records", lines=True)
+topic_df["row_ind"] = topic_df.index.map(lambda x: int(x))
+topic_df["row_ind"] = topic_df.index.astype(int)
 
-print(f"dual_use_df.shape - {dual_use_df.shape}")
-for i, row in tqdm(dual_use_df.iterrows()):
+
+k = 250
+
+hop_topic_df_savepath = safe_dual_use_facts_dir/ f"safe_topic_hop_dataset__basic__{k}.json"
+# load from json if exists
+
+def load_dict(path): 
+    return json.load(open(path))
+
+hop_topics = load_dict(hop_topic_df_savepath)
+
+print(f"hop_topics: {len(hop_topics)}")
+print(f"topic_df: {len(topic_df)}")
+print(f"wiki_facts: {len(wiki_facts)}")
+if False:
+    df_savepath = Path(
+        "/n/home04/rrinberg/code/data_to_concept_unlearning/notebooks"
+    ) / f"dual_use_df_bio__question_only.json"
+
+    dual_use_df = pd.read_json(df_savepath, orient="records", lines=True)
+
+    print(f"dual_use_df.shape - {dual_use_df.shape}")
+
+skipped_topics  = []
+
+
+for i, row in tqdm(topic_df.iterrows()):
 
     topic = row.subject
-    hops = row.hops
+    if topic not in hop_topics:
+        print(f"\nskipping {topic} - does not exist! \n")
+        skipped_topics.append(topic)
+        print(f"skipped_topics len: {len(skipped_topics)}")
+        continue
+    hops = hop_topics[topic]
     # every 10th hop
-    hops_ = hops[::10]
+    hops_ = hops
     print(f"first topic : {topic}")
     for hop_i, hop in enumerate(hops_):
-        print(f"{i} - {hop_i}; hop: {hop}")
+        
         if hop in wiki_facts:
+            
+            print(f"{i} - skipping {hop_i}; hop: {hop}")
             continue
         else:
+            print(f"{i} - {hop_i}; hop: {hop}")
             wiki_facts[hop] = fact_extractor(hop)
         save_dict(wiki_facts, wiki_facts_path)
+
+print(f"skipped_topics: {skipped_topics}")
+print(f"skipped_topics len: {len(skipped_topics)}")

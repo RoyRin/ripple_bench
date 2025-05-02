@@ -1,0 +1,75 @@
+{
+    "Cryptosporidium": [
+        "- Cryptosporidium is a parasite that causes respiratory and gastrointestinal illness, primarily involving watery diarrhea and sometimes a persistent cough.",
+        "- Treatment for gastrointestinal infection in humans involves fluid rehydration, electrolyte replacement, and management of pain. Anti-diarrheal medication, nitazoxanide, and supplemental zinc may also be effective.",
+        "- \"Cryptosporidium\" oocysts are 4-6 \u03bcm in diameter and exhibit partial acid-fast staining.",
+        "- Unlike other apicomplexan pathogens, \"Cryptosporidium\" does not require a vector or definitive host for transmission and can complete its lifecycle within a single host.",
+        "- \"Cryptosporidium\" causes acute, short-term infection in immunocompetent hosts, but can recur through reinfection or become severe or life-threatening in immunocompromised individuals.",
+        "- The parasite remains in the lower intestine for up to five weeks and is transmitted by environmentally hardy cysts (oocysts) that exist in the small intestine and result in infection of intestinal epithelial tissue.",
+        "- \"Cryptosporidium\" has three developmental stages: meronts, gamonts, and oocysts, which reproduce within intestinal epithelial cells.",
+        "- \"Cryptosporidium\" is highly resistant to chlorine disinfection, but can be inactivated with high enough concentrations and contact time of chlorine dioxide, ozone treatment, or ultraviolet light treatment at relatively low doses.",
+        "- Boiling is believed to be the safest option for water contaminated by \"Cryptosporidium\".",
+        "- Exposure risks include contaminated food, poor hygiene, and turning compost in a local compost site.",
+        "- \"Cryptosporidium\" typically does not cause serious illness in healthy people, but may chronically sicken some children and adults exposed and immunocompromised.",
+        "- Testing of water and epidemiological study are necessary to determine the sources of specific \"Cryptosporidium\" infections."
+    ],
+    "DAVID": [
+        "- DAVID is a free online bioinformatics resource developed by the Laboratory of Human Retrovirology and Immunoinformatics (LHRI) for functional interpretation of large gene lists derived from genomic studies.",
+        "- The DAVID Bioinformatics Resources consist of the DAVID Knowledgebase and five integrated, web-based functional annotation tool suites: the DAVID Gene Functional Classification Tool, the DAVID Functional Annotation Tool, the DAVID Gene ID Conversion Tool, the DAVID Gene Name Viewer, and the DAVID NIAID Pathogen Genome Browser.",
+        "- The DAVID Knowledgebase integrates almost all major and well-known public bioinformatics resources centralized by the DAVID Gene Concept, a single-linkage method to agglomerate tens of millions of diverse gene/protein identifiers and annotation terms from a variety of public bioinformatics databases.",
+        "- DAVID provides not only gene-term enrichment analysis but also new tools and functions that allow users to condense large gene lists into gene functional groups, convert between gene/protein identifiers, visualize many-genes-to-many-terms relationships, cluster redundant and heterogeneous terms into groups, search for interesting and related genes or terms, dynamically view genes from their lists on bio-pathways, and more.",
+        "- The DAVID Resources were updated in December 2021, and the knowledgebase is scheduled to update quarterly."
+    ],
+    "Influenza": [
+        "- Influenza A viruses are classified based on the structure of their haemagglutinin (HA) protein, which is involved in binding to host cells. HA proteins can have one of 18 different subtypes (H1-H18) and nine different numbers of acidic amino acid residues in their cleavage site (0, 1, 2, or 3). HA subtypes are further divided into groups based on the amino acid at position 190."
+    ],
+    "List of dangerous snakes": [
+        "- The eastern copperhead is one of the most venomous snakes in North America, with a venom yield of up to 120 mg (dried) per bite.",
+        "- The venom contains a potent hemotoxin that is strongly hemorrhagic, causing severe local pain, bleeding, and swelling that may begin almost immediately.",
+        "- Bite symptoms also include blistering, necrosis, and ulceration.",
+        "- The envenomation rate is up to 80%, and the untreated mortality rate is very low (1-10%).",
+        "- Antivenom is produced in the United States."
+    ],
+    "PANTHER": [
+        "- PANTHER is a biological database used for classifying and identifying the function of gene products through family and subfamily relationships.",
+        "- It is part of the Gene Ontology Reference Genome Project and uses both manual curation and bioinformatics algorithms for classification.",
+        "- Proteins are classified based on family, molecular function, biological process, and pathway.",
+        "- PANTHER uses the GIGA algorithm to generate phylogenetic trees for each protein family, which are labeled with heritable attributes such as subfamily membership, gene function, and protein class membership.",
+        "- PANTHER includes 176 pathways and has expanded the number of pathways associated with subfamilies in recent versions.",
+        "- PANTHER became a member of the InterPro Consortium in version 6.0.",
+        "- PANTHER version 7.0 represents speciation and gene duplication events and includes more support for alternative database identifiers.",
+        "- PANTHER version 8.0 uses the UniProt resource as the source of gene sets and includes 82 set of genomes.",
+        "- PANTHER version 9.0 contains 7180 protein families and 1,064,054 genes annotated.",
+        "- PANTHER's website provides several workflows, including gene list analysis, browse, sequence search, cSNP scoring, and keyword search.",
+        "- PANTHER's cSNP scoring tool estimates the likelihood of a nonsynonymous coding SNP leading to a functional effect on the protein using data from PANTHER version 6.1.",
+        "- PANTHER's website allows users to download HMMs, multiple sequence alignments, and phylogenetic trees for further analysis."
+    ],
+    "Pseudomonas aeruginosa": [
+        "- \"P.\u00a0aeruginosa\" is a Gram-negative, aerobic, rod-shaped bacterium with unipolar motility.",
+        "- It is an opportunistic pathogen of both humans and plants.",
+        "- It is the type species of the genus \"Pseudomonas\".",
+        "- It is capable of growth in diesel and jet fuels, where it is known as a hydrocarbon-using microorganism, causing microbial corrosion.",
+        "- It is commonly found in soil, water, and the air, and can cause infections in humans and animals through inhalation, ingestion, or contact with contaminated materials.",
+        "- It is a major cause of hospital-acquired infections, particularly in intensive care units and cystic fibrosis patients.",
+        "- It is resistant to many common antibiotics, making treatment difficult and contributing to its status as a serious health concern.",
+        "- Research is ongoing to develop new antibiotics and drugs against \"P.\u00a0aeruginosa\".",
+        "- It has been studied for use in bioremediation and processing polyethylene in municipal solid waste.",
+        "- It has been reported to cause ear infections, and phage therapy against this infection has been investigated."
+    ],
+    "Starvation": [
+        "- Starvation is a severe deficiency in caloric energy intake, below the level needed to maintain an organism's life.",
+        "- Prolonged starvation can cause permanent organ damage and eventually, death.",
+        "- Malnutrition is by far the biggest contributor to child mortality, present in half of all cases.",
+        "- Undernourishment affects between 720 and 811 million people globally in 2020.",
+        "- The bloated stomach represents a form of malnutrition called kwashiorkor.",
+        "- Without any food, humans usually die in around 2 months.",
+        "- Signs and symptoms of starvation include changes in behavior or mental status, weakness, fast heart rate, shallow breaths, thirst, constipation, weight loss, muscle wasting, tiredness, dizziness, swollen belly, skin loosens and turns pale, and swelling of the feet and ankles.",
+        "- A weakened immune system, slow wound healing, and poor response to infection are also symptoms of starvation.",
+        "- Starvation occurs when the body expends more energy than it takes in for an extended period of time.",
+        "- The cause of death due to starvation is usually an infection or the result of tissue breakdown.",
+        "- Starvation can be caused by factors beyond the control of the individual, such as warfare or lack of access to food.",
+        "- Organizations like aid agencies and political organizations have been effective at reducing starvation in different regions.",
+        "- Historically, starvation has been used as a death sentence, especially for guilty upper-class citizens, erring female members of patrician families, and slaves.",
+        "- Capital punishment by starvation has been practiced in ancient Greco-Roman societies, medieval Europe, and Native American tribes."
+    ]
+}
