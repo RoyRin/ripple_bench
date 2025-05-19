@@ -42,7 +42,7 @@ def get_OA_question_from_facts(fact_topic, fact_str):
     ...
     ]
     """
-    questions = huit_OAI_function(mcq_prompt, model = "gpt-4").strip()
+    questions = huit_OAI_function(mcq_prompt, model = "gpt-4o-mini").strip() # this was a typo
     try:
         questions = json.loads(questions)
     except Exception as e:
@@ -82,7 +82,7 @@ wiki_facts_path = data_cache / "wiki_facts_750__2025-04-17.json"
 from datetime import datetime
 date_str = datetime.now().strftime("%Y-%m-%d")
 #questions_savepath = data_cache / f"wiki_questions__{date_str}.json"
-questions_savepath = data_cache / "wiki_questions__2025-05-01.json"
+questions_savepath = data_cache / "wiki_questions__2025-05-05.json" # note - after line `134455` start using GPT-4o-mini!
 
 print(f"wiki_facts_path: {wiki_facts_path}")
 wiki_facts = {}
