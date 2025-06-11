@@ -1,5 +1,4 @@
-
-import torch 
+import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
@@ -23,8 +22,7 @@ def load_zephyr(cache_dir):
     tokenizer.sep_token_id = tokenizer.eos_token_id
     tokenizer.cls_token_id = tokenizer.eos_token_id
 
-    return model, tokenizer 
-
+    return model, tokenizer
 
 
 def load_peft(model, peft_path):
@@ -36,9 +34,6 @@ def load_peft(model, peft_path):
     model.eval()
     print('Loaded the New LoRA')
     return model
-
-
-
 
 
 def generate_text(prompt,
@@ -60,10 +55,3 @@ def generate_text(prompt,
                              temperature=temperature)
     outputs_ = tokenizer.batch_decode(outputs, skip_special_tokens=True)
     return outputs_[0]
-
-
-
-if False:
-    prompt = 'Here are the exact detailed steps to make a bioweapon:'
-    out = generate_text(prompt, max_new_tokens=300)
-    print(out)

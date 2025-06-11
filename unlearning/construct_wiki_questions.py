@@ -1,27 +1,23 @@
-
 from unlearning import openai_utils
 from pathlib import Path
 import os
 
-
-
-HOME_DIR = os.path.expanduser("~")
-BASE_DIR = Path(HOME_DIR) / "code/data_to_concept_unlearning/"
-if not BASE_DIR.exists():
-    BASE_DIR = Path("/Users/roy/code/research/unlearning/data_to_concept_unlearning/")
-SECRET_DIR =  BASE_DIR  / "SECRETS"
-
+from unlearning import SECRET_DIR
 
 HUIT_SECRET = openai_utils.get_open_ai_huit_secret(SECRET_DIR)
 
 # TODO: check if I need to set `store=True,` for the client?
 USE_HUIT_OAI_TOKEN = True
 
-pay_money = True 
+pay_money = True
 
-def huit_OAI_function(prompt, model="gpt-4o-mini", temperature = 0.75):
+
+def huit_OAI_function(prompt, model="gpt-4o-mini", temperature=0.75):
     # wrap function aroudn the huit secret
-    return openai_utils.make_openai_request( prompt, OPEN_AI_key=HUIT_SECRET, model = model, temperature=temperature)
+    return openai_utils.make_openai_request(prompt,
+                                            OPEN_AI_key=HUIT_SECRET,
+                                            model=model,
+                                            temperature=temperature)
 
 
 def get_OA_question_from_facts(fact_topic, fact_str):
@@ -42,13 +38,14 @@ def get_OA_question_from_facts(fact_topic, fact_str):
     ...
     ]
     """
-    questions = huit_OAI_function(mcq_prompt, model = "gpt-4o-mini").strip() # this was a typo
+    questions = huit_OAI_function(
+        mcq_prompt, model="gpt-4o-mini").strip()  # this was a typo
     try:
         questions = json.loads(questions)
     except Exception as e:
         print(f"Error parsing JSON: {e}")
         return []
-    
+
     for q_c_a in questions:
         choices = q_c_a["choices"]
         answer = q_c_a["answer"]
@@ -58,11 +55,8 @@ def get_OA_question_from_facts(fact_topic, fact_str):
 
 data_cache = Path("/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia")
 
-
 #
 # f"wiki_facts_750__{date_str}.json"
-
-
 
 import json
 
@@ -77,18 +71,19 @@ def read_dict(savepath):
         data = json.load(f)
     return data
 
+
 wiki_facts_path = data_cache / "wiki_facts_750__2025-04-17.json"
 
 from datetime import datetime
+
 date_str = datetime.now().strftime("%Y-%m-%d")
 #questions_savepath = data_cache / f"wiki_questions__{date_str}.json"
-questions_savepath = data_cache / "wiki_questions__2025-05-05.json" # note - after line `134455` start using GPT-4o-mini!
+questions_savepath = data_cache / "wiki_questions__2025-05-05.json"  # note - after line `134455` start using GPT-4o-mini!
 
 print(f"wiki_facts_path: {wiki_facts_path}")
 wiki_facts = {}
 if os.path.exists(wiki_facts_path):
     wiki_facts = read_dict(wiki_facts_path)
-    
 
 all_questions = {}
 # load
@@ -109,11 +104,11 @@ for fact_topic, facts in wiki_facts.items():
         all_questions[fact_topic] = fact_questions
         print(f"example question: {fact_questions[0]}")
         save_dict(all_questions, questions_savepath)
-        print(f"saved questions for {fact_topic}; len(all_questions) = {len(all_questions)}")
+        print(
+            f"saved questions for {fact_topic}; len(all_questions) = {len(all_questions)}"
+        )
     except Exception as e:
         print(e)
         continue
 
-
-    
 print(f"len all_questions = {len(all_questions)}")

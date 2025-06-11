@@ -1,43 +1,28 @@
-from huggingface_hub import HfFolder
-from datasets import load_dataset
 import pandas as pd
 from pathlib import Path
 import os
 import torch
-from unlearning import metrics
-from importlib import reload
-from openai import OpenAI
 
 import os
 
-from unlearning.metrics import get_wmdp_accuracy, get_mmlu_accuracy, get_truthfulqa, get_hp_accuracy
-from peft import PeftModel, PeftConfig
+from unlearning import CACHE_DIR
 
-cache_dir = '/n/netscratch/vadhan_lab/Lab/rrinberg/HF_cache'
-print(f"Setting cache_dir to {cache_dir}")
-print(os.path.exists(cache_dir))
-os.environ['HF_HOME'] = cache_dir
-os.environ['TRANSFORMERS_CACHE'] = cache_dir
+print(f"Setting cache_dir to {CACHE_DIR}")
+print(os.path.exists(CACHE_DIR))
+os.environ['HF_HOME'] = CACHE_DIR
+os.environ['TRANSFORMERS_CACHE'] = CACHE_DIR
 import transformers
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 transformers.utils.logging.set_verbosity(transformers.logging.CRITICAL)
 
-import datasets
 from tqdm.notebook import tqdm
-import numpy as np
 import torch
 # from transformers import AdamW
-from torch.optim import AdamW
-from torch.nn import CrossEntropyLoss, MSELoss, NLLLoss, KLDivLoss
-import random
 
-from unlearning.construct_dual_use_facts_dataset import extract_bulleted_facts
+from unlearning.extract_facts import extract_bulleted_facts
 from wiki_rag import wikipedia as rag_wikipedia
-from wiki_rag import rag
-
-from langchain.vectorstores import FAISS
 
 load_model = True
 
@@ -50,7 +35,7 @@ if load_model:
         model_id,
         # use_flash_attention_2="flash_attention_2",
         torch_dtype=dtype,
-        cache_dir=cache_dir,
+        cache_dir=CACHE_DIR,
     )
     model = model.to(device)
     model.requires_grad_(False)
@@ -120,29 +105,28 @@ wiki_facts_path = data_cache / "wiki_facts_750__2025-04-17.json"
 #
 # f"wiki_facts_750__{date_str}.json"
 
-
 print(f"wiki_facts_path: {wiki_facts_path}")
 wiki_facts = {}
 if os.path.exists(wiki_facts_path):
     wiki_facts = read_dict(wiki_facts_path)
 
-
 HOME_DIR = os.path.expanduser("~")
 BASE_DIR = Path(HOME_DIR) / "code/data_to_concept_unlearning/"
 safe_dual_use_facts_dir = BASE_DIR / "safe_facts"
-topic_df_savepath =safe_dual_use_facts_dir/ f"question_topic_df_bio.json"
+topic_df_savepath = safe_dual_use_facts_dir / f"question_topic_df_bio.json"
 topic_df = pd.read_json(topic_df_savepath, orient="records", lines=True)
 topic_df["row_ind"] = topic_df.index.map(lambda x: int(x))
 topic_df["row_ind"] = topic_df.index.astype(int)
 
-
 k = 250
 
-hop_topic_df_savepath = safe_dual_use_facts_dir/ f"safe_topic_hop_dataset__basic__{k}.json"
+hop_topic_df_savepath = safe_dual_use_facts_dir / f"safe_topic_hop_dataset__basic__{k}.json"
 # load from json if exists
 
-def load_dict(path): 
+
+def load_dict(path):
     return json.load(open(path))
+
 
 hop_topics = load_dict(hop_topic_df_savepath)
 
@@ -158,8 +142,7 @@ if False:
 
     print(f"dual_use_df.shape - {dual_use_df.shape}")
 
-skipped_topics  = []
-
+skipped_topics = []
 
 for i, row in tqdm(topic_df.iterrows()):
 
@@ -174,9 +157,9 @@ for i, row in tqdm(topic_df.iterrows()):
     hops_ = hops
     print(f"first topic : {topic}")
     for hop_i, hop in enumerate(hops_):
-        
+
         if hop in wiki_facts:
-            
+
             print(f"{i} - skipping {hop_i}; hop: {hop}")
             continue
         else:

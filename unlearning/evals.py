@@ -1,9 +1,8 @@
-
 from unlearning import metrics, models
 from unlearning import dual_use_facts_utils
 
 
-def eval_on_wmdp(dataframe, model, tokenizer ):
+def eval_on_wmdp(dataframe, model, tokenizer):
     batch_size = 5
 
     batches = metrics.prepare_data_wmdp(dataframe.iterrows(), batch_size)
@@ -16,7 +15,8 @@ def eval_on_wmdp(dataframe, model, tokenizer ):
 
     #bio question
 
-    bio_question, bio_answer = dual_use_facts_utils.get_wmdp_question_answer(dataframe, 2)
+    bio_question, bio_answer = dual_use_facts_utils.get_wmdp_question_answer(
+        dataframe, 2)
 
     prompt_format = f"extract a stand-alone, specific fact using information from this question-answer pair: {bio_question} \nAnswer: {bio_answer} \nFact: "
 
@@ -38,6 +38,7 @@ def eval_on_wmdp(dataframe, model, tokenizer ):
     answer_ind = row['answer']
     choices
 
-    dual_use_row = dual_use_facts_utils.construct_single_dual_use_df_row(question, choices)
+    dual_use_row = dual_use_facts_utils.construct_single_dual_use_df_row(
+        question, choices)
     # pd.concat([dual_use_dataframe, row], ignore_index=True)
     return dual_use_row
