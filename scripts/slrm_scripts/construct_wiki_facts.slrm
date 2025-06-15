@@ -1,12 +1,12 @@
 #!/bin/sh
-#SBATCH --job-name=construct_safe
+#SBATCH --job-name=wiki-facts
 #SBATCH --array=0-0
 #SBATCH --partition=kempner_h100
 #SBATCH --gres=gpu:1
 #SBATCH --mem=80G
 #SBATCH -t 0-72:00
 #SBATCH -c 1
-#SBATCH --output=/n/home04/rrinberg/catered_out/data_unlearning/construct-safe-dual-use-facts-%A__%a.out
+#SBATCH --output=/n/home04/rrinberg/catered_out/data_unlearning/construct-wiki-facts-%A__%a.out
 #SBATCH --mail-user=royrinberg@gmail.com  
 #SBATCH --mail-type=ALL
 #SBATCH --account kempner_emalach_lab
@@ -22,11 +22,10 @@ mamba activate unlearning_3.10
 
 
 ## logging
-DATA_DIR=/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia
-CODE_DIR=/n/home04/rrinberg/code/data_to_concept_unlearning/unlearning
+CODE_DIR=/n/home04/rrinberg/code/data_to_concept_unlearning/unlearning/scripts
 
 
 ## Run the experiment
 cd $CODE_DIR
 
-python construct_dual_use_facts_dataset.py
+python construct_wiki_facts.py

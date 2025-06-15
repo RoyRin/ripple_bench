@@ -43,3 +43,9 @@ Our goal is to:
 2. generate "hop" topics from topics
 3. extract facts from topics
 4. extract questions from facts
+
+
+# Things to do:
+0. Generate figure of process for ripple-bench
+1. look at script pipeline - make it clean
+2. 
