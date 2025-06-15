@@ -2,13 +2,11 @@ from ripple_bench import openai_utils
 from pathlib import Path
 import os
 
-from ripple_bench import SECRET_DIR
+from ripple_bench import SECRET_DIR, utils
+import json
 
 HUIT_SECRET = openai_utils.get_open_ai_huit_secret(SECRET_DIR)
-
-# TODO: check if I need to set `store=True,` for the client?
 USE_HUIT_OAI_TOKEN = True
-
 pay_money = True
 
 
@@ -55,21 +53,7 @@ def get_OA_question_from_facts(fact_topic, fact_str):
 
 data_cache = Path("/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia")
 
-#
-# f"wiki_facts_750__{date_str}.json"
 
-import json
-
-
-def save_dict(data, savepath):
-    with open(savepath, 'w') as f:
-        json.dump(data, f, indent=4, sort_keys=True)
-
-
-def read_dict(savepath):
-    with open(savepath, 'r') as f:
-        data = json.load(f)
-    return data
 
 
 wiki_facts_path = data_cache / "wiki_facts_750__2025-04-17.json"
@@ -83,13 +67,13 @@ questions_savepath = data_cache / "wiki_questions__2025-05-05.json"  # note - af
 print(f"wiki_facts_path: {wiki_facts_path}")
 wiki_facts = {}
 if os.path.exists(wiki_facts_path):
-    wiki_facts = read_dict(wiki_facts_path)
+    wiki_facts = utils.read_dict(wiki_facts_path)
 
 all_questions = {}
 # load
 # order them by hop topics
 if os.path.exists(questions_savepath):
-    all_questions = read_dict(questions_savepath)
+    all_questions = utils.read_dict(questions_savepath)
 print(f"len all_questions = {len(all_questions)}")
 for fact_topic, facts in wiki_facts.items():
     print(f"fact_topic: {fact_topic}--")
@@ -103,7 +87,7 @@ for fact_topic, facts in wiki_facts.items():
         # save questions to json
         all_questions[fact_topic] = fact_questions
         print(f"example question: {fact_questions[0]}")
-        save_dict(all_questions, questions_savepath)
+        utils.save_dict(all_questions, questions_savepath)
         print(
             f"saved questions for {fact_topic}; len(all_questions) = {len(all_questions)}"
         )

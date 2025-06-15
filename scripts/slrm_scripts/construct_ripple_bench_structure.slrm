@@ -28,4 +28,4 @@ CODE_DIR=/n/home04/rrinberg/code/data_to_concept_unlearning/unlearning/scripts
 ## Run the experiment
 cd $CODE_DIR
 
-python construct_dual_use_facts_dataset.py
+python construct_ripple_bench_structure.py
