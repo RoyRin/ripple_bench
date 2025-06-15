@@ -4,3 +4,4 @@
 [submodule "wiki-rag"]
 	path = wiki-rag
 	url = git@github.com:RoyRin/wiki-rag.git
+

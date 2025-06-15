@@ -5,7 +5,7 @@ import torch
 
 import os
 
-from unlearning import CACHE_DIR
+from ripple_bench import CACHE_DIR
 
 print(f"Setting cache_dir to {CACHE_DIR}")
 print(os.path.exists(CACHE_DIR))
@@ -21,7 +21,7 @@ from tqdm.notebook import tqdm
 import torch
 # from transformers import AdamW
 
-from unlearning.extract_facts import extract_bulleted_facts
+from ripple_bench.extract_facts import extract_bulleted_facts
 from wiki_rag import wikipedia as rag_wikipedia
 
 load_model = True

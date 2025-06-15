@@ -14,8 +14,8 @@ import wikipedia
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import datetime
-
 from langchain.embeddings import HuggingFaceEmbeddings
+from ripple_bench.dual_use_facts_utils import extract_bulleted_facts
 
 
 class PromptedBGE(HuggingFaceEmbeddings):
@@ -33,9 +33,8 @@ class PromptedBGE(HuggingFaceEmbeddings):
 
 BAAI_embedding = PromptedBGE(model_name="BAAI/bge-base-en")  # or bge-large-en
 
-from extract_facts import extract_bulleted_facts
 
-from unlearning import CACHE_DIR
+from ripple_bench import CACHE_DIR
 
 if __name__ == "__main__":
     suffix = ""

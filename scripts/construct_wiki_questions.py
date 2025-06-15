@@ -1,8 +1,8 @@
-from unlearning import openai_utils
+from ripple_bench import openai_utils
 from pathlib import Path
 import os
 
-from unlearning import SECRET_DIR
+from ripple_bench import SECRET_DIR
 
 HUIT_SECRET = openai_utils.get_open_ai_huit_secret(SECRET_DIR)
 
