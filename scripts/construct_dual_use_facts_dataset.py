@@ -15,7 +15,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import datetime
 from langchain.embeddings import HuggingFaceEmbeddings
-from ripple_bench.dual_use_facts_utils import extract_bulleted_facts
+from ripple_bench.generate_ripple_questions import extract_bulleted_facts
 
 
 class PromptedBGE(HuggingFaceEmbeddings):
