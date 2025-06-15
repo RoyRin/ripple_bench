@@ -11,8 +11,8 @@ def get_wmdp_question_answer(df, row_index, verbose=True):
     answer_ind = row['answer']
     answer = choices[answer_ind]
     if verbose:
-        print(f"Question: {question} \nAnswer: {answer}"
-              )  #; \nchoices : {choices}")
+        print(f"Question: {question} \nAnswer: {answer}" )  
+        #; \nchoices : {choices}")
     return question, answer
 
 

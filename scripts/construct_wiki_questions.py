@@ -4,6 +4,7 @@ import os
 
 from ripple_bench import SECRET_DIR, utils
 import json
+from datetime import datetime
 
 HUIT_SECRET = openai_utils.get_open_ai_huit_secret(SECRET_DIR)
 USE_HUIT_OAI_TOKEN = True
@@ -51,48 +52,45 @@ def get_OA_question_from_facts(fact_topic, fact_str):
     return questions
 
 
-data_cache = Path("/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia")
 
+if __name__ == "__main__":
+    data_cache = Path("/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia")
+    wiki_facts_path = data_cache / "wiki_facts_750__2025-04-17.json"
 
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    #questions_savepath = data_cache / f"wiki_questions__{date_str}.json"
+    questions_savepath = data_cache / "wiki_questions__2025-05-05.json"  # note - after line `134455` start using GPT-4o-mini!
 
+    print(f"wiki_facts_path: {wiki_facts_path}")
+    wiki_facts = {}
+    if os.path.exists(wiki_facts_path):
+        wiki_facts = utils.read_dict(wiki_facts_path)
 
-wiki_facts_path = data_cache / "wiki_facts_750__2025-04-17.json"
+    all_questions = {}
+    # load
+    # order them by hop topics
+    if os.path.exists(questions_savepath):
+        all_questions = utils.read_dict(questions_savepath)
+    print(f"len all_questions = {len(all_questions)}")
+    
+    for fact_topic, facts in wiki_facts.items():
+        print(f"fact_topic: {fact_topic}--")
+        if fact_topic in all_questions:
+            print(f"already have questions for {fact_topic}")
+            continue
+        fact_str = "\n".join(facts)
+        #print(fact_str)
+        try:
+            fact_questions = get_OA_question_from_facts(fact_topic, fact_str)
+            # save questions to json
+            all_questions[fact_topic] = fact_questions
+            print(f"example question: {fact_questions[0]}")
+            utils.save_dict(all_questions, questions_savepath)
+            print(
+                f"saved questions for {fact_topic}; len(all_questions) = {len(all_questions)}"
+            )
+        except Exception as e:
+            print(e)
+            continue
 
-from datetime import datetime
-
-date_str = datetime.now().strftime("%Y-%m-%d")
-#questions_savepath = data_cache / f"wiki_questions__{date_str}.json"
-questions_savepath = data_cache / "wiki_questions__2025-05-05.json"  # note - after line `134455` start using GPT-4o-mini!
-
-print(f"wiki_facts_path: {wiki_facts_path}")
-wiki_facts = {}
-if os.path.exists(wiki_facts_path):
-    wiki_facts = utils.read_dict(wiki_facts_path)
-
-all_questions = {}
-# load
-# order them by hop topics
-if os.path.exists(questions_savepath):
-    all_questions = utils.read_dict(questions_savepath)
-print(f"len all_questions = {len(all_questions)}")
-for fact_topic, facts in wiki_facts.items():
-    print(f"fact_topic: {fact_topic}--")
-    if fact_topic in all_questions:
-        print(f"already have questions for {fact_topic}")
-        continue
-    fact_str = "\n".join(facts)
-    #print(fact_str)
-    try:
-        fact_questions = get_OA_question_from_facts(fact_topic, fact_str)
-        # save questions to json
-        all_questions[fact_topic] = fact_questions
-        print(f"example question: {fact_questions[0]}")
-        utils.save_dict(all_questions, questions_savepath)
-        print(
-            f"saved questions for {fact_topic}; len(all_questions) = {len(all_questions)}"
-        )
-    except Exception as e:
-        print(e)
-        continue
-
-print(f"len all_questions = {len(all_questions)}")
+    print(f"len all_questions = {len(all_questions)}")

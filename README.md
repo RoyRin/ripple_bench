@@ -52,6 +52,11 @@ Our goal is to:
 
 
 Operations:
-1. `construct_dual_use_facts_dataset` - figure out
+1. `construct_ripple_bench_structure` - figure out a dataframe of topics,
 2. `construct_wiki_facts` - generate the facts associated with each wikipedia article
 2. `construct_wiki_questions` - generates questions for each set of facts
+
+
+
+questions to self:
+`dual_use_facts_df` - what does this store?

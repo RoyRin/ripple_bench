@@ -28,39 +28,13 @@ class PromptedBGE(HuggingFaceEmbeddings):
         return super().embed_query(
             f"Represent this query for retrieval: {text}")
 
-
-# BAAI_embedding = HuggingFaceEmbeddings(model_name="BAAI/bge-large-en")
-
 BAAI_embedding = PromptedBGE(model_name="BAAI/bge-base-en")  # or bge-large-en
 
+data_cache = Path("/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia")
+json_dir = data_cache / 'json'
 
-from ripple_bench import CACHE_DIR
 
-if __name__ == "__main__":
-    suffix = ""
-
-    suffix = "__question_only"
-
-    print(f"Starting dual use facts dataset construction")
-    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-    code_dir = Path(
-        "/n/home04/rrinberg/code/data_to_concept_unlearning/unlearning")
-    safe_dual_use_facts_path = code_dir / f"safe_facts_dual_use_df_bio{suffix}__{date_str}.json"
-
-    ###
-    # get Dual Use Facts
-    ###
-
-    dual_use_path = f"/n/home04/rrinberg/code/data_to_concept_unlearning/notebooks/dual_use_df_bio{suffix}.json"
-
-    dual_use_df = pd.read_json(dual_use_path, orient="records", lines=True)
-
-    ##
-    # load RAG
-    ##
-
-    faiss_path = Path(f"/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia/"
-                      ) / "faiss_index__top_10000000__2025-04-11"
+def get_RAG(faiss_path = Path(f"/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia/") / "faiss_index__top_10000000__2025-04-11"):
 
     print(f"loading vectorstore from {faiss_path}")
     vectorstore = FAISS.load_local(
@@ -69,14 +43,23 @@ if __name__ == "__main__":
         allow_dangerous_deserialization=
         True  # <-- set this only if you created the file
     )
-    print(f"loading model")
+    
+    asset_dir = Path(
+        "/n/home04/rrinberg/code/data_to_concept_unlearning/wiki-rag/assets")
+    title_to_file_path_f = asset_dir / 'title_to_file_path.json'
 
+    title_to_file_path_f_pkl = asset_dir / 'title_to_file_path.pkl'    
+    print(f"loading wiki index from {title_to_file_path_f_pkl}")
+
+    title_to_file_path = rag_wikipedia.get_title_to_path_index(
+        json_dir, title_to_file_path_f_pkl)
+
+    return vectorstore, title_to_file_path
+
+def get_summarizing_model(model_id = 'HuggingFaceH4/zephyr-7b-beta', device = 'cuda:0', dtype = torch.float32):
     ##
     # load model for summarizing
     ##
-    model_id = 'HuggingFaceH4/zephyr-7b-beta'
-    device = 'cuda:0'
-    dtype = torch.float32
 
     summarizing_model = AutoModelForCausalLM.from_pretrained(
         model_id,
@@ -84,37 +67,14 @@ if __name__ == "__main__":
         torch_dtype=dtype,
         cache_dir=CACHE_DIR,
     )
-    model = summarizing_model.to(device)
-    model.requires_grad_(False)
+    summarizing_model = summarizing_model.to(device)
+    summarizing_model.requires_grad_(False)
     tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=False)
 
-    ##
-    # Load backup Wikipedia
-    ##
+    return summarizing_model, tokenizer
 
-    data_cache = Path("/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia")
-    json_dir = data_cache / 'json'
-    # HACK - hardcode location
-    asset_dir = Path(
-        "/n/home04/rrinberg/code/data_to_concept_unlearning/wiki-rag/assets")
-    title_to_file_path_f = asset_dir / 'title_to_file_path.json'
-    title_to_file_path_f_pkl = asset_dir / 'title_to_file_path.pkl'
 
-    output_f = asset_dir / 'english_pageviews.csv'
-    stats_f = asset_dir / 'pageviews-20241201-000000'
-    print(f"loading english df from {output_f}")
-    english_df = rag_wikipedia.get_sorted_english_df(
-        output_f, stats_f)  # output - where to output, stats_f base
-
-    print(f"loading wiki index from {title_to_file_path_f_pkl}")
-
-    title_to_file_path = rag_wikipedia.get_title_to_path_index(
-        json_dir, title_to_file_path_f_pkl)
-
-    # Good to Go!
-
-    num_docs_per_subject = 1
-    # check if dataset already loaded
+def warm_start(safe_dual_use_facts_path):
     topics_seen = set()
     print(f"will be saving to : {safe_dual_use_facts_path}")
     dual_use_facts_dataset = []
@@ -136,10 +96,46 @@ if __name__ == "__main__":
         topics_seen = set(dual_use_facts_df['subject'].unique())
         print(f"Topics seen: {topics_seen}")
         print(f"{len(topics_seen)} unique topics seen")
+        return dual_use_facts_dataset, topics_seen 
+    
+
+from ripple_bench import CACHE_DIR
+
+if __name__ == "__main__":
+    suffix = "__question_only"
+    print(f"Starting dual use facts dataset construction")
+    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    code_dir = Path(
+        "/n/home04/rrinberg/code/data_to_concept_unlearning/unlearning")
+    safe_dual_use_facts_path = code_dir / f"safe_facts_dual_use_df_bio{suffix}__{date_str}.json"
+
+    ###
+    # get Dual Use Facts
+    ###
+    dual_use_path = f"/n/home04/rrinberg/code/data_to_concept_unlearning/notebooks/dual_use_df_bio{suffix}.json"
+
+    dual_use_df = pd.read_json(dual_use_path, orient="records", lines=True)
+
+    ##
+    # load RAG and Wikipedia
+    ##
+    vectorstore, title_to_file_path = get_RAG()
+    ##
+    # load model for summarizing
+    ##
+    summarizing_model, tokenizer = get_summarizing_model(model_id= 'HuggingFaceH4/zephyr-7b-beta')
+    
+    # HACK - hardcode location
+    # Good to Go!
+
+    num_docs_per_subject = 1
+    # check if dataset already loaded
+
+    dual_use_facts_dataset, topics_seen = warm_start(safe_dual_use_facts_path=safe_dual_use_facts_path)
 
     #
-
     for i, row in dual_use_df.iterrows():
+        
         safe_topic = row['subject']
         print(f"Processing subject: {safe_topic}")
         query = f"What is {safe_topic}"
