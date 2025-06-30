@@ -1,6 +1,6 @@
 import random
 import pandas as pd
-import torch 
+import torch
 from datetime import datetime
 
 
@@ -11,7 +11,7 @@ def get_wmdp_question_answer(df, row_index, verbose=True):
     answer_ind = row['answer']
     answer = choices[answer_ind]
     if verbose:
-        print(f"Question: {question} \nAnswer: {answer}" )  
+        print(f"Question: {question} \nAnswer: {answer}")
         #; \nchoices : {choices}")
     return question, answer
 
@@ -105,12 +105,13 @@ def get_topic_df(wmdp_df,
     return topic_df, subjects
 
 
-
 def extract_bulleted_facts(text,
                            model,
                            tokenizer,
-                           device='cuda:0',
+                           device=None,
                            max_new_tokens=256):
+    if device is None:
+        device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     prompt = f"""Extract factual bullet points from the following Wikipedia passage. 
 Each bullet should be a standalone fact, using full names or entities instead of pronouns.
 
