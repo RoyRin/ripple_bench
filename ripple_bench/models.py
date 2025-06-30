@@ -3,10 +3,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
 
-def load_zephyr(cache_dir):
+def load_zephyr(cache_dir=None):
     model_id = 'HuggingFaceH4/zephyr-7b-beta'
-    device = 'cuda:0'
-    dtype = torch.float32
+    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    dtype = torch.float32 if device == 'cpu' else torch.float16
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         # use_flash_attention_2="flash_attention_2",
@@ -15,7 +15,7 @@ def load_zephyr(cache_dir):
     )
     model = model.to(device)
     model.requires_grad_(False)
-    tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=False)
+    tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=False, cache_dir=cache_dir)
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.padding_side = "left"
     tokenizer.mask_token_id = tokenizer.eos_token_id
