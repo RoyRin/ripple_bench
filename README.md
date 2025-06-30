@@ -1,62 +1,106 @@
-# Characterizing Concept Unlearning
+# Ripple Bench: Measuring Knowledge Ripple Effects in Language Model Unlearning
 
+This repository implements **Ripple Bench**, a benchmark for measuring how knowledge changes propagate through related concepts when unlearning specific information from language models.
 
-## Development and Usage
-This codebase uses `python3.10`. 
-### Installation
-This library is developed using [Poetry](https://python-poetry.org/), evidenced by the `pyproject.toml`. However, it can be installed either through Poetry or with `pip` + your favorite virtual environment.
+## Overview
 
-#### Installation Using a Virtual Environment [Tested and Supported]
-1. Create a virtual environment `python3.10 -m venv venv`
-2. Source this environment `source venv/bin/activate`
-3. From the base of the codebase, run `pip install -e .`   
+When we unlearn specific knowledge from a language model (e.g., information about biological weapons), how does this affect the model's knowledge of related topics? Ripple Bench quantifies these "ripple effects" by:
 
-#### Installation Using Poetry [Not supported by authors]
-While `poetry` is used to manage the dependencies, and the authors use poetry, tests are run using `venv` and so the authors only commit to supporting installation using `virtualenv` or `venv`
+1. Starting with questions from WMDP (Weapons of Mass Destruction Proxy)
+2. Extracting core topics and finding semantically related topics
+3. Generating new questions about these related topics
+4. Evaluating how model performance degrades with semantic distance from the unlearned concept
 
-1. Install Poetry(`curl -sSL https://install.python-poetry.org | python3 -`)
-2. Navigate to the base of the codebase.
-3. Run `poetry shell`
-4. Run `poetry install`
+## Installation
 
+Requires Python 3.10+
 
+```bash
+# Quick setup with uv (recommended)
+curl -LsSf https://astral.sh/uv/install.sh | sh  # Install uv if needed
+./setup_uv_env.sh
+source venv/bin/activate
+```
 
-Running `poetry shell` or `source venv/bin/activate` will shell into the virtual environments with the code installed, and will allow you to run the executables directly.
+## Pipeline Usage
 
+### 1. Build Ripple Bench Dataset
 
+```bash
+python scripts/build_ripple_bench_from_wmdp.py \
+    --wmdp-path notebooks/wmdp/wmdp-bio.json \
+    --num-samples 50 \
+    --k-neighbors 5 \
+    --questions-per-topic 5 \
+    --output-dir ripple_bench_datasets
+```
 
-# Todo
-1. Goal- build finetuning dataset on dual-use facts
- Test out that you can construct facts from a wikipedia page, using an LLM (and it's not too expensive, if we need to use OpenAI). 
-2. evaluate the finetuned model on WMDP and on the safe dataset
-2. Construct a synthetic dataset, using Ekdeeps reasoning, with examples of functions 
+This will:
+- Extract topics from WMDP questions using Anthropic Claude
+- Find related topics using Wikipedia semantic search (FAISS)
+- Extract facts from Wikipedia articles
+- Generate evaluation questions for each topic
 
-Our goal is to:
-1. be extra precise about what we want
-2. formalize the problem of unlearning to the ELM setting
+### 2. Evaluate Models
 
+```bash
+python scripts/evaluate_ripple_bench.py \
+    ripple_bench_datasets/ripple_bench_dataset_*.json \
+    --base-model /path/to/base/model \
+    --unlearned-model /path/to/unlearned/model \
+    --output-dir evaluation_results
+```
 
+This produces:
+- Accuracy comparisons between base and unlearned models
+- Ripple effect visualizations showing performance vs. topic distance
+- Detailed analysis reports
 
-# Ripple Effect measuring
+## Configuration
 
-1. extract topics from questions 
-2. generate "hop" topics from topics
-3. extract facts from topics
-4. extract questions from facts
+### API Keys
+- Anthropic: Place your key in `SECRETS/anthropic.key`
+- OpenAI (optional): Place your key in `SECRETS/openai_huit.secret`
 
+### Wikipedia Index
+The pipeline uses a pre-built FAISS index of Wikipedia. Default location:
+```
+/Users/roy/data/wikipedia/hugging_face/faiss_index__top_1000000__2025-04-11
+```
 
-# Things to do:
-0. Generate figure of process for ripple-bench
-1. look at script pipeline - make it clean
-2. 
+To use a different index:
+```bash
+export WIKI_FAISS_PATH=/path/to/your/faiss/index
+```
 
+## Project Structure
 
-Operations:
-1. `construct_ripple_bench_structure` - figure out a dataframe of topics,
-2. `construct_wiki_facts` - generate the facts associated with each wikipedia article
-2. `construct_wiki_questions` - generates questions for each set of facts
+```
+ripple_bench/           # Core library code
+├── metrics.py          # Model evaluation metrics
+├── models.py           # Model loading utilities  
+├── generate_ripple_questions.py  # Question generation
+└── utils.py            # Helper functions
 
+scripts/                # Executable scripts
+├── build_ripple_bench_from_wmdp.py  # Dataset creation
+├── evaluate_ripple_bench.py         # Model evaluation
+└── test_wiki_rag.py                 # Test WikiRAG setup
 
+notebooks/              # Jupyter notebooks for analysis
+tests/                  # Unit tests
+```
 
-questions to self:
-`dual_use_facts_df` - what does this store?
+## Example Output
+
+The evaluation generates plots showing:
+- Overall accuracy comparison
+- Accuracy degradation with semantic distance (the "ripple effect")
+- Per-topic performance differences
+
+## Citation
+
+If you use Ripple Bench in your research, please cite:
+```
+[Citation pending]
+```

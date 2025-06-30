@@ -30,29 +30,65 @@ class PromptedBGE(HuggingFaceEmbeddings):
 
 BAAI_embedding = PromptedBGE(model_name="BAAI/bge-base-en")  # or bge-large-en
 
-data_cache = Path("/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia")
+# Check for environment variable or use default
+import os
+DEFAULT_FAISS_PATH = "/Users/roy/data/wikipedia/hugging_face/faiss_index__top_1000000__2025-04-11"
+faiss_base_path = os.environ.get('WIKI_FAISS_PATH', DEFAULT_FAISS_PATH)
+
+data_cache = Path(faiss_base_path).parent.parent  # Go up two levels to get wikipedia base
 json_dir = data_cache / 'json'
 
 
-def get_RAG(faiss_path = Path(f"/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia/") / "faiss_index__top_10000000__2025-04-11"):
-
+def get_RAG(faiss_path = None):
+    if faiss_path is None:
+        faiss_path = Path(faiss_base_path)
+    
     print(f"loading vectorstore from {faiss_path}")
+    
+    # Check if the path exists
+    if not faiss_path.exists():
+        raise FileNotFoundError(f"FAISS index not found at {faiss_path}. "
+                              f"Please set WIKI_FAISS_PATH environment variable or "
+                              f"ensure the index exists at {DEFAULT_FAISS_PATH}")
+    
     vectorstore = FAISS.load_local(
-        faiss_path,
+        str(faiss_path),
         BAAI_embedding,
         allow_dangerous_deserialization=
         True  # <-- set this only if you created the file
     )
     
-    asset_dir = Path(
-        "/n/home04/rrinberg/code/data_to_concept_unlearning/wiki-rag/assets")
+    # Look for assets in the wiki-rag directory relative to current file
+    current_dir = Path(__file__).parent.parent
+    asset_dir = current_dir / "wiki-rag" / "assets"
+    
+    # If not found, check in the faiss path directory
+    if not asset_dir.exists():
+        asset_dir = faiss_path.parent / "assets"
+    
     title_to_file_path_f = asset_dir / 'title_to_file_path.json'
-
     title_to_file_path_f_pkl = asset_dir / 'title_to_file_path.pkl'    
-    print(f"loading wiki index from {title_to_file_path_f_pkl}")
-
-    title_to_file_path = rag_wikipedia.get_title_to_path_index(
-        json_dir, title_to_file_path_f_pkl)
+    
+    # Check if pickle file exists, otherwise use json
+    if title_to_file_path_f_pkl.exists():
+        print(f"loading wiki index from {title_to_file_path_f_pkl}")
+        title_to_file_path = rag_wikipedia.get_title_to_path_index(
+            json_dir, title_to_file_path_f_pkl)
+    elif title_to_file_path_f.exists():
+        print(f"loading wiki index from {title_to_file_path_f}")
+        import json
+        with open(title_to_file_path_f, 'r') as f:
+            title_to_file_path = json.load(f)
+    else:
+        # Try to find it in the faiss directory
+        index_file = faiss_path / "index.pkl"
+        if index_file.exists():
+            print(f"loading wiki index from {index_file}")
+            import pickle
+            with open(index_file, 'rb') as f:
+                title_to_file_path = pickle.load(f)
+        else:
+            raise FileNotFoundError(f"Could not find title_to_file_path index in {asset_dir} or {faiss_path}")
 
     return vectorstore, title_to_file_path
 
