@@ -9,6 +9,7 @@ data
 .DS_Store
 wandb
 
+.venv
 
 LEACE-concept-erasure
 erasing-llm
@@ -16,6 +17,11 @@ open-unlearning
 nanoGPT
 
 nano-GPT
+
+# WMDP dataset - DO NOT COMMIT
+data/wmdp/
+wmdp-*.json
+notebooks/wmdp/*.json
 
 
 

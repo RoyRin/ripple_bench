@@ -26,19 +26,25 @@ from ripple_bench.anthropic_utils import anthropic_function
 from ripple_bench.utils import save_dict, read_dict
 from ripple_bench.models import load_zephyr
 
+from ripple_bench.construct_ripple_bench_structure import get_RAG, PromptedBGE
 
 class RippleBenchBuilder:
 
     def __init__(self,
                  output_dir: str = "ripple_bench_datasets",
-                 llm_provider: str = "anthropic"):
+                 llm_provider: str = "anthropic",
+                 use_timestamp: bool = False):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.llm_provider = llm_provider
+        self.use_timestamp = use_timestamp
 
         # Create subdirectories for intermediate files
-        self.intermediate_dir = self.output_dir / "intermediate" / self.timestamp
+        if use_timestamp:
+            self.intermediate_dir = self.output_dir / "intermediate" / self.timestamp
+        else:
+            self.intermediate_dir = self.output_dir / "intermediate"
         self.intermediate_dir.mkdir(parents=True, exist_ok=True)
 
         # Create specific subdirectories
@@ -75,6 +81,13 @@ class RippleBenchBuilder:
         """Extract topics from WMDP questions using LLM."""
         print("Extracting topics from questions...")
 
+        # Check for existing results first
+        json_file = self.topics_dir / "wmdp_topics.json"
+        if json_file.exists():
+            print(f"Found existing topics at {json_file}")
+            topics = read_dict(json_file)
+            return pd.DataFrame(topics)
+
         # Check for cached results
         if cache_file and Path(cache_file).exists():
             print(f"Loading cached topics from {cache_file}")
@@ -84,8 +97,19 @@ class RippleBenchBuilder:
         if num_samples:
             questions = questions[:num_samples]
 
-        topics = []
-        for i, q in enumerate(tqdm(questions)):
+        # Check for temporary file to resume from
+        temp_file = self.topics_dir / "wmdp_topics_temp.json"
+        if temp_file.exists():
+            print(f"Resuming from temporary file: {temp_file}")
+            topics = read_dict(temp_file)
+            start_idx = len(topics)
+            print(f"Resuming from question {start_idx}")
+        else:
+            topics = []
+            start_idx = 0
+
+        # Process remaining questions
+        for i, q in enumerate(tqdm(questions[start_idx:], initial=start_idx)):
             question_text = q['question']
             topic = self._extract_topic(question_text)
             topics.append({
@@ -93,23 +117,22 @@ class RippleBenchBuilder:
                 'topic': topic,
                 'answer': q['answer'],
                 'choices': q['choices'],
-                'original_index': i
+                'original_index': start_idx + i
             })
 
             # Save intermediate results
-            if i % 10 == 0:
-                temp_file = self.topics_dir / f"wmdp_topics_temp_{self.timestamp}.json"
+            if (start_idx + i + 1) % 10 == 0:
                 save_dict(topics, temp_file)
 
         df = pd.DataFrame(topics)
 
         # Save final results
-        final_file = self.topics_dir / f"wmdp_topics_{self.timestamp}.csv"
-        df.to_csv(final_file, index=False)
-
-        # Also save as JSON for easy reloading
-        json_file = self.topics_dir / f"wmdp_topics_{self.timestamp}.json"
+        df.to_csv(self.topics_dir / "wmdp_topics.csv", index=False)
         save_dict(topics, json_file)
+
+        # Remove temp file
+        if temp_file.exists():
+            temp_file.unlink()
 
         return df
 
@@ -200,6 +223,12 @@ Please format your response as a bulleted list using "•" symbols.'''
         """Generate ordered list of related topics using RAG."""
         print("Generating ordered topic lists using RAG...")
 
+        # Check for existing results first
+        final_file = self.neighbors_dir / "topic_neighbors.json"
+        if final_file.exists():
+            print(f"Found existing topic neighbors at {final_file}")
+            return read_dict(final_file)
+
         # Check for cached results
         if cache_file and Path(cache_file).exists():
             print(f"Loading cached topic neighbors from {cache_file}")
@@ -208,18 +237,28 @@ Please format your response as a bulleted list using "•" symbols.'''
         # Import RAG components
         import sys
         sys.path.append('wiki-rag')
-        from construct_ripple_bench_structure import get_RAG, PromptedBGE
+        from scripts.extract_topics_and_neighbors import get_RAG, PromptedBGE
 
         # Initialize RAG
         print("Initializing RAG system...")
         vectorstore, wiki_title_to_path = get_RAG()
         embedding_model = PromptedBGE(model_name="BAAI/bge-base-en")
 
-        topic_to_neighbors = {}
-        unique_topics = list(set(topics))
+        # Check for temporary file to resume from
+        temp_file = self.neighbors_dir / "topic_neighbors_temp.json"
+        if temp_file.exists():
+            print(f"Resuming from temporary file: {temp_file}")
+            topic_to_neighbors = read_dict(temp_file)
+            processed_topics = set(topic_to_neighbors.keys())
+        else:
+            topic_to_neighbors = {}
+            processed_topics = set()
 
-        print(f"Processing {len(unique_topics)} unique topics...")
-        for topic in tqdm(unique_topics):
+        unique_topics = list(set(topics))
+        remaining_topics = [t for t in unique_topics if t not in processed_topics]
+
+        print(f"Processing {len(remaining_topics)} remaining topics (already processed: {len(processed_topics)})")
+        for topic in tqdm(remaining_topics):
             # Search for similar topics using LangChain similarity search
             similar_docs = vectorstore.similarity_search(topic,
                                                          k=k_neighbors + 1)
@@ -238,12 +277,14 @@ Please format your response as a bulleted list using "•" symbols.'''
 
             # Save intermediate results
             if len(topic_to_neighbors) % 10 == 0:
-                temp_file = self.neighbors_dir / f"topic_neighbors_temp_{self.timestamp}.json"
                 save_dict(topic_to_neighbors, temp_file)
 
         # Save final results
-        final_file = self.neighbors_dir / f"topic_neighbors_{self.timestamp}.json"
         save_dict(topic_to_neighbors, final_file)
+
+        # Remove temp file
+        if temp_file.exists():
+            temp_file.unlink()
 
         return topic_to_neighbors
 
@@ -254,6 +295,12 @@ Please format your response as a bulleted list using "•" symbols.'''
             use_local_model: bool = False) -> Dict[str, Dict[str, str]]:
         """Extract facts from Wikipedia articles for topics and their neighbors."""
         print("Extracting facts from Wikipedia articles...")
+
+        # Check for existing results first
+        final_file = self.facts_dir / "wiki_facts.json"
+        if final_file.exists():
+            print(f"Found existing facts at {final_file}")
+            return read_dict(final_file)
 
         # Check for cached results
         if cache_file and Path(cache_file).exists():
@@ -270,7 +317,16 @@ Please format your response as a bulleted list using "•" symbols.'''
         # Import Wikipedia access
         import wikipedia
 
-        facts_dict = {}
+        # Check for temporary file to resume from
+        temp_file = self.facts_dir / "wiki_facts_temp.json"
+        if temp_file.exists():
+            print(f"Resuming from temporary file: {temp_file}")
+            facts_dict = read_dict(temp_file)
+            processed_topics = set(facts_dict.keys())
+        else:
+            facts_dict = {}
+            processed_topics = set()
+
         all_topics = set()
 
         # Collect all topics (original + neighbors)
@@ -278,8 +334,10 @@ Please format your response as a bulleted list using "•" symbols.'''
             all_topics.add(topic)
             all_topics.update(neighbors)
 
-        print(f"Extracting facts for {len(all_topics)} topics...")
-        for topic in tqdm(all_topics):
+        remaining_topics = [t for t in all_topics if t not in processed_topics]
+
+        print(f"Extracting facts for {len(remaining_topics)} remaining topics (already processed: {len(processed_topics)})")
+        for topic in tqdm(remaining_topics):
             # Skip unknown topics
             if topic.lower() in ["unknown topic", "unknown", ""]:
                 facts_dict[topic] = {
@@ -354,12 +412,14 @@ Please format your response as a bulleted list using "•" symbols.'''
 
             # Save intermediate results
             if len(facts_dict) % 10 == 0:
-                temp_file = self.facts_dir / f"wiki_facts_temp_{self.timestamp}.json"
                 save_dict(facts_dict, temp_file)
 
         # Save final results
-        final_file = self.facts_dir / f"wiki_facts_{self.timestamp}.json"
         save_dict(facts_dict, final_file)
+
+        # Remove temp file
+        if temp_file.exists():
+            temp_file.unlink()
 
         return facts_dict
 
@@ -370,17 +430,34 @@ Please format your response as a bulleted list using "•" symbols.'''
         """Generate multiple choice questions from extracted facts."""
         print("Generating questions from facts...")
 
+        # Check for existing results first
+        final_file = self.questions_dir / "ripple_bench_questions.json"
+        if final_file.exists():
+            print(f"Found existing questions at {final_file}")
+            return read_dict(final_file)
+
         # Check for cached results
         if cache_file and Path(cache_file).exists():
             print(f"Loading cached questions from {cache_file}")
             return read_dict(cache_file)
 
-        all_questions = []
+        # Check for temporary file to resume from
+        temp_file = self.questions_dir / "generated_questions_temp.json"
+        if temp_file.exists():
+            print(f"Resuming from temporary file: {temp_file}")
+            all_questions = read_dict(temp_file)
+            processed_topics = {q['topic'] for q in all_questions}
+        else:
+            all_questions = []
+            processed_topics = set()
+
+        remaining_topics = [(topic, fact_data) for topic, fact_data in facts_dict.items() 
+                            if topic not in processed_topics]
 
         print(
-            f"Generating {questions_per_topic} questions for each of {len(facts_dict)} topics..."
+            f"Generating {questions_per_topic} questions for {len(remaining_topics)} remaining topics (already processed: {len(processed_topics)})"
         )
-        for topic, fact_data in tqdm(facts_dict.items()):
+        for topic, fact_data in tqdm(remaining_topics):
             facts = fact_data['facts']
 
             # Skip if no real facts available
@@ -434,15 +511,64 @@ Only return the JSON list, no other text."""
 
             # Save intermediate results
             if len(all_questions) % 50 == 0:
-                temp_file = self.questions_dir / f"generated_questions_temp_{self.timestamp}.json"
                 save_dict(all_questions, temp_file)
 
         # Save final results
-        final_file = self.questions_dir / f"ripple_bench_questions_{self.timestamp}.json"
         save_dict(all_questions, final_file)
+
+        # Remove temp file
+        if temp_file.exists():
+            temp_file.unlink()
 
         print(f"Generated {len(all_questions)} questions total")
         return all_questions
+
+    def _organize_by_distance(self, topics_df, topic_to_neighbors, facts_dict, questions):
+        """Organize dataset by semantic distance from original topics."""
+        # Group questions by topic
+        questions_by_topic = {}
+        for q in questions:
+            topic = q['topic']
+            if topic not in questions_by_topic:
+                questions_by_topic[topic] = []
+            questions_by_topic[topic].append(q)
+        
+        # Get original topics
+        original_topics = set(topics_df['topic'].unique())
+        
+        # Organize topics by distance
+        topics_list = []
+        
+        # Distance 0: Original topics
+        for topic in original_topics:
+            if topic in questions_by_topic and topic in facts_dict:
+                topics_list.append({
+                    'topic': topic,
+                    'distance': 0,
+                    'original_topic': topic,
+                    'facts': facts_dict[topic].get('facts', ''),
+                    'wiki_url': facts_dict[topic].get('url', ''),
+                    'questions': questions_by_topic[topic]
+                })
+        
+        # Distance 1+: Neighbor topics
+        for original_topic, neighbors in topic_to_neighbors.items():
+            for i, neighbor_topic in enumerate(neighbors):
+                if neighbor_topic in questions_by_topic and neighbor_topic in facts_dict:
+                    # Skip if already added as distance 0
+                    if neighbor_topic in original_topics:
+                        continue
+                    
+                    topics_list.append({
+                        'topic': neighbor_topic,
+                        'distance': i + 1,  # Distance based on neighbor rank
+                        'original_topic': original_topic,
+                        'facts': facts_dict[neighbor_topic].get('facts', ''),
+                        'wiki_url': facts_dict[neighbor_topic].get('url', ''),
+                        'questions': questions_by_topic[neighbor_topic]
+                    })
+        
+        return topics_list
 
     def build_dataset(self,
                       wmdp_path: str,
@@ -496,6 +622,11 @@ Only return the JSON list, no other text."""
             questions_per_topic,
             cache_file=cache_files.get('questions'))
 
+        # Organize data by distance levels
+        topics_by_distance = self._organize_by_distance(
+            topics_df, topic_to_neighbors, facts_dict, generated_questions
+        )
+
         # Create final dataset summary
         dataset_summary = {
             'metadata': {
@@ -509,14 +640,20 @@ Only return the JSON list, no other text."""
                 'total_generated_questions': len(generated_questions),
                 'llm_provider': self.llm_provider
             },
-            'topics_df': topics_df.to_dict('records'),
-            'topic_to_neighbors': topic_to_neighbors,
-            'facts_dict': facts_dict,
-            'questions': generated_questions
+            'topics': topics_by_distance,
+            'raw_data': {
+                'topics_df': topics_df.to_dict('records'),
+                'topic_to_neighbors': topic_to_neighbors,
+                'facts_dict': facts_dict,
+                'questions': generated_questions
+            }
         }
 
         # Save complete dataset
-        summary_file = self.output_dir / f"ripple_bench_dataset_{self.timestamp}.json"
+        if self.use_timestamp:
+            summary_file = self.output_dir / f"ripple_bench_dataset_{self.timestamp}.json"
+        else:
+            summary_file = self.output_dir / "ripple_bench_dataset.json"
         save_dict(dataset_summary, summary_file)
 
         print(f"\nDataset building complete!")
@@ -535,7 +672,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Build Ripple Bench Dataset from WMDP")
     parser.add_argument("--wmdp-path",
-                        default="notebooks/wmdp/wmdp-bio.json",
+                        default="data/wmdp/wmdp-bio.json",
                         help="Path to WMDP questions JSON file")
     parser.add_argument(
         "--num-samples",
@@ -564,12 +701,17 @@ def main():
         "--use-local-model",
         action="store_true",
         help="Use local Zephyr model for fact extraction instead of API calls")
+    parser.add_argument(
+        "--use-timestamp",
+        action="store_true",
+        help="Use timestamp in output directories (default: False)")
 
     args = parser.parse_args()
 
     # Create builder and run
     builder = RippleBenchBuilder(output_dir=args.output_dir,
-                                 llm_provider=args.llm_provider)
+                                 llm_provider=args.llm_provider,
+                                 use_timestamp=args.use_timestamp)
     print(f"Using LLM provider: {args.llm_provider}")
     if args.use_local_model:
         print("Using local Zephyr model for fact extraction")
