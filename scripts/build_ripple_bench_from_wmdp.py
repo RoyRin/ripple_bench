@@ -33,12 +33,20 @@ class RippleBenchBuilder:
     def __init__(self,
                  output_dir: str = "ripple_bench_datasets",
                  llm_provider: str = "anthropic",
-                 use_timestamp: bool = False):
+                 use_timestamp: bool = False,
+                 topic_model: str = "claude-4-sonnet",
+                 fact_model: str = "claude-4-sonnet",
+                 question_model: str = "claude-4-opus"):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.llm_provider = llm_provider
         self.use_timestamp = use_timestamp
+        
+        # Model settings for different tasks
+        self.topic_model = topic_model
+        self.fact_model = fact_model
+        self.question_model = question_model
 
         # Create subdirectories for intermediate files
         if use_timestamp:
@@ -152,7 +160,7 @@ Important:
 
 Topic:'''
 
-        response = self.llm_function(prompt, temperature=0.3)
+        response = self.llm_function(prompt, model=self.topic_model, temperature=0.3)
         if response and response.strip() and response.strip().lower() not in [
                 "unknown", "unknown topic", "n/a", "none"
         ]:
@@ -192,7 +200,7 @@ Please format your response as a bulleted list using "•" symbols.'''
             print(
                 f"Extracting facts for {topic} (content length: {len(content)} chars)"
             )
-            response = self.llm_function(prompt, temperature=0.3)
+            response = self.llm_function(prompt, model=self.fact_model, temperature=0.3)
             print(f"response is - {response}")
             if response:
                 response_len = len(response.strip())
@@ -219,6 +227,8 @@ Please format your response as a bulleted list using "•" symbols.'''
             self,
             topics: List[str],
             k_neighbors: int = 5,
+            neighbor_sample_step: int = 3,
+            max_neighbors_to_fetch: int = 300,
             cache_file: str = None) -> Dict[str, List[str]]:
         """Generate ordered list of related topics using RAG."""
         print("Generating ordered topic lists using RAG...")
@@ -258,22 +268,31 @@ Please format your response as a bulleted list using "•" symbols.'''
         remaining_topics = [t for t in unique_topics if t not in processed_topics]
 
         print(f"Processing {len(remaining_topics)} remaining topics (already processed: {len(processed_topics)})")
+        print(f"Fetching {max_neighbors_to_fetch} neighbors, sampling every {neighbor_sample_step} neighbor")
+        
         for topic in tqdm(remaining_topics):
-            # Search for similar topics using LangChain similarity search
-            similar_docs = vectorstore.similarity_search(topic,
-                                                         k=k_neighbors + 1)
+            # Search for more topics than needed
+            num_to_fetch = min(max_neighbors_to_fetch + 1, 1000)  # Cap at 1000 for safety
+            similar_docs = vectorstore.similarity_search(topic, k=num_to_fetch)
 
-            # Get neighboring topics (excluding the topic itself if present)
-            neighbors = []
+            # Get all neighboring topics (excluding the topic itself)
+            all_neighbors = []
             for doc in similar_docs:
                 # Extract topic from document metadata or content
                 neighbor_topic = doc.metadata.get(
                     'title',
                     doc.page_content.split('\n')[0])
-                if neighbor_topic != topic and neighbor_topic not in neighbors:
-                    neighbors.append(neighbor_topic)
+                if neighbor_topic != topic and neighbor_topic not in all_neighbors:
+                    all_neighbors.append(neighbor_topic)
 
-            topic_to_neighbors[topic] = neighbors[:k_neighbors]
+            # Sample neighbors: take every nth neighbor
+            sampled_neighbors = []
+            for i in range(0, len(all_neighbors), neighbor_sample_step):
+                if len(sampled_neighbors) >= k_neighbors:
+                    break
+                sampled_neighbors.append(all_neighbors[i])
+            
+            topic_to_neighbors[topic] = sampled_neighbors[:k_neighbors]
 
             # Save intermediate results
             if len(topic_to_neighbors) % 10 == 0:
@@ -486,7 +505,7 @@ Format your response as a JSON list with this structure:
 Only return the JSON list, no other text."""
 
             try:
-                response = self.llm_function(prompt, temperature=0.7)
+                response = self.llm_function(prompt, model=self.question_model, temperature=0.7)
 
                 # Try to extract JSON from response
                 response = response.strip()
@@ -574,6 +593,7 @@ Only return the JSON list, no other text."""
                       wmdp_path: str,
                       num_samples: int = None,
                       k_neighbors: int = 5,
+                      neighbor_sample_step: int = 3,
                       questions_per_topic: int = 5,
                       use_cache: bool = False,
                       use_local_model: bool = False):
@@ -608,6 +628,7 @@ Only return the JSON list, no other text."""
         topic_to_neighbors = self.generate_ordered_topic_list(
             unique_topics,
             k_neighbors,
+            neighbor_sample_step=neighbor_sample_step,
             cache_file=cache_files.get('neighbors'))
 
         # Step 4: Extract facts
@@ -683,6 +704,10 @@ def main():
                         type=int,
                         default=5,
                         help="Number of neighbor topics to retrieve")
+    parser.add_argument("--neighbor-sample-step",
+                        type=int,
+                        default=3,
+                        help="Sample every Nth neighbor from the first 300 (default: 3)")
     parser.add_argument("--questions-per-topic",
                         type=int,
                         default=5,
@@ -705,23 +730,40 @@ def main():
         "--use-timestamp",
         action="store_true",
         help="Use timestamp in output directories (default: False)")
+    parser.add_argument(
+        "--topic-model",
+        default="claude-4-sonnet",
+        help="Model to use for topic extraction (default: claude-4-sonnet)")
+    parser.add_argument(
+        "--fact-model",
+        default="claude-4-sonnet",
+        help="Model to use for fact extraction (default: claude-4-sonnet)")
+    parser.add_argument(
+        "--question-model",
+        default="claude-4-opus",
+        help="Model to use for question generation (default: claude-4-opus)")
 
     args = parser.parse_args()
 
     # Create builder and run
     builder = RippleBenchBuilder(output_dir=args.output_dir,
                                  llm_provider=args.llm_provider,
-                                 use_timestamp=args.use_timestamp)
+                                 use_timestamp=args.use_timestamp,
+                                 topic_model=args.topic_model,
+                                 fact_model=args.fact_model,
+                                 question_model=args.question_model)
     print(f"Using LLM provider: {args.llm_provider}")
-    if args.use_local_model:
-        print("Using local Zephyr model for fact extraction")
-    else:
-        print(f"Using {args.llm_provider} API for fact extraction")
+    print(f"Models:")
+    print(f"  - Topic extraction: {args.topic_model}")
+    print(f"  - Fact extraction: {args.fact_model} {'(local Zephyr)' if args.use_local_model else ''}")
+    print(f"  - Question generation: {args.question_model}")
+    print(f"Neighbor sampling: {args.k_neighbors} neighbors from every {args.neighbor_sample_step}th position (out of first 300)")
 
     dataset = builder.build_dataset(
         wmdp_path=args.wmdp_path,
         num_samples=args.num_samples,
         k_neighbors=args.k_neighbors,
+        neighbor_sample_step=args.neighbor_sample_step,
         questions_per_topic=args.questions_per_topic,
         use_cache=args.use_cache,
         use_local_model=args.use_local_model)
