@@ -1,0 +1,394 @@
+[
+    {
+        "answer": "A",
+        "choices": [
+            "A) Non-segmented, negative-sense RNA with 6-10 genes and specific 3' leader and 5' trailer sequences",
+            "B) Segmented, positive-sense RNA with 6-10 genes and variable leader sequences",
+            "C) Non-segmented, positive-sense RNA with 12-15 genes and no trailer sequence",
+            "D) Segmented, negative-sense RNA with 4-6 genes and multiple leader sequences"
+        ],
+        "question": "Which of the following best describes the genome organization of Paramyxoviridae viruses?",
+        "source": "generated_from_facts",
+        "topic": "Paramyxoviridae",
+        "wiki_title": "Paramyxoviridae",
+        "wiki_url": "https://en.wikipedia.org/wiki/Paramyxoviridae"
+    },
+    {
+        "answer": "B",
+        "choices": [
+            "A) Genes at the 5' end are transcribed more frequently than those at the 3' end",
+            "B) Genes at the 3' end are transcribed more frequently than those at the 5' end",
+            "C) All genes are transcribed at equal frequencies regardless of position",
+            "D) Transcription occurs randomly throughout the genome"
+        ],
+        "question": "What is meant by 'transcriptional polarity' in Paramyxoviridae?",
+        "source": "generated_from_facts",
+        "topic": "Paramyxoviridae",
+        "wiki_title": "Paramyxoviridae",
+        "wiki_url": "https://en.wikipedia.org/wiki/Paramyxoviridae"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) Quorum sensing",
+            "B) Plasmid transfer",
+            "C) DNA replication",
+            "D) Host cell adhesion"
+        ],
+        "question": "What is the primary mechanism by which bacteria coordinate the release of virulence factors?",
+        "source": "generated_from_facts",
+        "topic": "Virulence",
+        "wiki_title": "Virulence",
+        "wiki_url": "https://en.wikipedia.org/wiki/Virulence"
+    },
+    {
+        "answer": "B",
+        "choices": [
+            "A) The speed at which a pathogen reproduces",
+            "B) The loss of fitness induced by a parasite upon its host",
+            "C) The ability of bacteria to communicate with each other",
+            "D) The transfer of genetic material between organisms"
+        ],
+        "question": "From an ecological perspective, how is virulence defined?",
+        "source": "generated_from_facts",
+        "topic": "Virulence",
+        "wiki_title": "Virulence",
+        "wiki_url": "https://en.wikipedia.org/wiki/Virulence"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) Enhanced growth in high iron environments",
+            "B) Ability to grow on chitin",
+            "C) Presence of two circular chromosomes",
+            "D) Curved rod shape"
+        ],
+        "question": "What feature of Vibrio vulnificus contributes to its increased virulence in certain patients?",
+        "source": "generated_from_facts",
+        "topic": "Vibrio vulnificus",
+        "wiki_title": "Vibrio vulnificus",
+        "wiki_url": "https://en.wikipedia.org/wiki/Vibrio_vulnificus"
+    },
+    {
+        "answer": "C",
+        "choices": [
+            "A) Its presence in marine environments",
+            "B) Its ability to cause human infections",
+            "C) Its larger genome size",
+            "D) Its gram-negative structure"
+        ],
+        "question": "Which characteristic of Vibrio vulnificus makes it unique compared to V. cholerae?",
+        "source": "generated_from_facts",
+        "topic": "Vibrio vulnificus",
+        "wiki_title": "Vibrio vulnificus",
+        "wiki_url": "https://en.wikipedia.org/wiki/Vibrio_vulnificus"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) Varicellavirus",
+            "B) Orthopoxvirus",
+            "C) Parapoxvirus",
+            "D) Molluscipoxvirus"
+        ],
+        "question": "Which of the following is NOT one of the four genera of poxviruses that can infect humans?",
+        "source": "generated_from_facts",
+        "topic": "Poxvirus gene expression",
+        "wiki_title": "Poxviridae",
+        "wiki_url": "https://en.wikipedia.org/wiki/Poxviridae"
+    },
+    {
+        "answer": "B",
+        "choices": [
+            "A) WHO headquarters in Geneva and London",
+            "B) CDC in Atlanta and Institute of Virus Preparations in Moscow",
+            "C) Research facilities in Paris and Tokyo",
+            "D) United Nations laboratories in New York and Beijing"
+        ],
+        "question": "After the global eradication of smallpox was declared in 1979, where were the remaining virus samples stored?",
+        "source": "generated_from_facts",
+        "topic": "Poxvirus gene expression",
+        "wiki_title": "Poxviridae",
+        "wiki_url": "https://en.wikipedia.org/wiki/Poxviridae"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) 10:1 viruses to bacteria",
+            "B) 1:10 viruses to bacteria",
+            "C) 1:1 viruses to bacteria",
+            "D) 100:1 viruses to bacteria"
+        ],
+        "question": "What is the typical ratio of viruses to bacteria found in nature?",
+        "source": "generated_from_facts",
+        "topic": "Human virome",
+        "wiki_title": "Human virome",
+        "wiki_url": "https://en.wikipedia.org/wiki/Human_virome"
+    },
+    {
+        "answer": "C",
+        "choices": [
+            "A) Age",
+            "B) Geographic location",
+            "C) Diet",
+            "D) Seasonal changes"
+        ],
+        "question": "Which of the following is NOT mentioned as a factor that influences an individual's unique virome?",
+        "source": "generated_from_facts",
+        "topic": "Human virome",
+        "wiki_title": "Human virome",
+        "wiki_url": "https://en.wikipedia.org/wiki/Human_virome"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) Tensions with co-star Jaleel White",
+            "B) Health issues",
+            "C) A better job offer",
+            "D) Contract disputes with producers"
+        ],
+        "question": "What caused Jo Marie Payton to leave Family Matters before the show's final season ended?",
+        "source": "generated_from_facts",
+        "topic": "Jo Marie Payton-France",
+        "wiki_title": "Jo Marie Payton",
+        "wiki_url": "https://en.wikipedia.org/wiki/Jo_Marie_Payton"
+    },
+    {
+        "answer": "B",
+        "choices": [
+            "A) The Boondocks",
+            "B) The Proud Family",
+            "C) Kim Possible",
+            "D) The PJs"
+        ],
+        "question": "Which animated series featured Jo Marie Payton as the voice of Suga Mama Proud?",
+        "source": "generated_from_facts",
+        "topic": "Jo Marie Payton-France",
+        "wiki_title": "Jo Marie Payton",
+        "wiki_url": "https://en.wikipedia.org/wiki/Jo_Marie_Payton"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) Hyperaccumulators concentrate more metals in leaves and shoots than roots",
+            "B) Hyperaccumulators store all metals exclusively in their roots",
+            "C) Hyperaccumulators distribute metals equally throughout all plant tissues",
+            "D) Hyperaccumulators cannot store metals in their tissues at all"
+        ],
+        "question": "What is the primary difference in metal distribution between hyperaccumulator plants and normal plants?",
+        "source": "generated_from_facts",
+        "topic": "Hyperaccumulator",
+        "wiki_title": "Hyperaccumulator",
+        "wiki_url": "https://en.wikipedia.org/wiki/Hyperaccumulator"
+    },
+    {
+        "answer": "B",
+        "choices": [
+            "A) They have completely different genes than related species",
+            "B) They have different patterns of gene expression and regulation",
+            "C) They have thicker cell walls that block metal absorption",
+            "D) They convert metals into non-toxic compounds"
+        ],
+        "question": "What explains the ability of hyperaccumulator plants to accumulate high levels of metals compared to related species?",
+        "source": "generated_from_facts",
+        "topic": "Hyperaccumulator",
+        "wiki_title": "Hyperaccumulator",
+        "wiki_url": "https://en.wikipedia.org/wiki/Hyperaccumulator"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) Heavy metals",
+            "B) Organic pollutants",
+            "C) Polychlorinated biphenyls",
+            "D) Soil contaminants"
+        ],
+        "question": "Which of the following pollutants CANNOT be broken down through phytoremediation?",
+        "source": "generated_from_facts",
+        "topic": "Heavy metal hyperaccumulation",
+        "wiki_title": "Phytoremediation",
+        "wiki_url": "https://en.wikipedia.org/wiki/Phytoremediation"
+    },
+    {
+        "answer": "B",
+        "choices": [
+            "A) They only grow in contaminated soil",
+            "B) They can bioaccumulate and detoxify various compounds",
+            "C) They are only effective against organic pollutants",
+            "D) They all belong to the same plant family"
+        ],
+        "question": "What is a key characteristic of hyperaccumulator plants used in phytoremediation?",
+        "source": "generated_from_facts",
+        "topic": "Heavy metal hyperaccumulation",
+        "wiki_title": "Phytoremediation",
+        "wiki_url": "https://en.wikipedia.org/wiki/Phytoremediation"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) Through both chromosomal encoding and mobile genetic elements",
+            "B) Only through vertical inheritance from parent cells",
+            "C) Exclusively through plasmids",
+            "D) Only through mutation of existing genes"
+        ],
+        "question": "Which of the following best describes how virulence factors can be acquired by bacteria?",
+        "source": "generated_from_facts",
+        "topic": "Virulence factor",
+        "wiki_title": "Virulence factor",
+        "wiki_url": "https://en.wikipedia.org/wiki/Virulence_factor"
+    },
+    {
+        "answer": "C",
+        "choices": [
+            "A) To break down host antibodies",
+            "B) To extract nutrients from the host",
+            "C) To prevent phagocytosis by the immune system",
+            "D) To facilitate attachment to host tissue"
+        ],
+        "question": "What is the primary function of bacterial capsules as a virulence factor?",
+        "source": "generated_from_facts",
+        "topic": "Virulence factor",
+        "wiki_title": "Virulence factor",
+        "wiki_url": "https://en.wikipedia.org/wiki/Virulence_factor"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) To neutralize APOBEC enzymes that would mutate viral genetic material",
+            "B) To directly replicate viral DNA",
+            "C) To facilitate viral entry into host cells",
+            "D) To produce new viral proteins"
+        ],
+        "question": "What is the primary function of the Viral infectivity factor (Vif) in HIV?",
+        "source": "generated_from_facts",
+        "topic": "Viral infectivity",
+        "wiki_title": "Viral infectivity factor",
+        "wiki_url": "https://en.wikipedia.org/wiki/Viral_infectivity_factor"
+    },
+    {
+        "answer": "B",
+        "choices": [
+            "A) By directly binding and inactivating APOBEC3G enzymes",
+            "B) By targeting APOBEC3G for degradation using the Cullin5 E3 Ubiquitin Ligase system",
+            "C) By blocking the production of APOBEC3G in host cells",
+            "D) By mutating the genetic code for APOBEC3G"
+        ],
+        "question": "How does HIV-1 Vif neutralize APOBEC3G?",
+        "source": "generated_from_facts",
+        "topic": "Viral infectivity",
+        "wiki_title": "Viral infectivity factor",
+        "wiki_url": "https://en.wikipedia.org/wiki/Viral_infectivity_factor"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) HPIV-1 and HPIV-3 belong to Respirovirus while HPIV-2 and HPIV-4 belong to Rubulavirus",
+            "B) HPIV-1 and HPIV-2 belong to Respirovirus while HPIV-3 and HPIV-4 belong to Rubulavirus",
+            "C) All four HPIV types belong to the Respirovirus genus",
+            "D) HPIV-1 and HPIV-4 belong to Respirovirus while HPIV-2 and HPIV-3 belong to Rubulavirus"
+        ],
+        "question": "Which of the following statements about Human parainfluenza virus (HPIV) classification is correct?",
+        "source": "generated_from_facts",
+        "topic": "Human parainfluenza viruses",
+        "wiki_title": "Human parainfluenza viruses",
+        "wiki_url": "https://en.wikipedia.org/wiki/Human_parainfluenza_viruses"
+    },
+    {
+        "answer": "C",
+        "choices": [
+            "A) 5\u2032-NP-P-M-F-HN-L-3\u2032",
+            "B) 3\u2032-L-HN-F-M-P-NP-5\u2032",
+            "C) 3\u2032-NP-P-M-F-HN-L-5\u2032",
+            "D) 5\u2032-L-F-HN-M-P-NP-3\u2032"
+        ],
+        "question": "What is the correct structural gene sequence for Human parainfluenza viruses?",
+        "source": "generated_from_facts",
+        "topic": "Human parainfluenza viruses",
+        "wiki_title": "Human parainfluenza viruses",
+        "wiki_url": "https://en.wikipedia.org/wiki/Human_parainfluenza_viruses"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) Through monkey bites, scratches, or mucous membrane exposure",
+            "B) Through airborne particles",
+            "C) Through contaminated food or water",
+            "D) Through human-to-human contact"
+        ],
+        "question": "What is the primary mode of B virus transmission from macaques to humans?",
+        "source": "generated_from_facts",
+        "topic": "B virus",
+        "wiki_title": "B virus",
+        "wiki_url": "https://en.wikipedia.org/wiki/B_virus"
+    },
+    {
+        "answer": "C",
+        "choices": [
+            "A) A veterinarian in China",
+            "B) A researcher at Yerkes Research Center",
+            "C) William Brebner, a physician",
+            "D) A laboratory technician"
+        ],
+        "question": "Who was the first documented human case of B virus infection?",
+        "source": "generated_from_facts",
+        "topic": "B virus",
+        "wiki_title": "B virus",
+        "wiki_url": "https://en.wikipedia.org/wiki/B_virus"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) They require acidic soils and form mycorrhizal relationships with fungi",
+            "B) They require alkaline soils and are nitrogen-fixing",
+            "C) They require neutral pH soils and are self-sufficient",
+            "D) They require sandy soils and depend on bacterial relationships"
+        ],
+        "question": "Which of the following best describes the soil and nutritional requirements of Vaccinium plants?",
+        "source": "generated_from_facts",
+        "topic": "Vaccinia",
+        "wiki_title": "Vaccinium",
+        "wiki_url": "https://en.wikipedia.org/wiki/Vaccinium"
+    },
+    {
+        "answer": "B",
+        "choices": [
+            "A) They develop from superior ovaries and are always red",
+            "B) They develop from inferior ovaries and are typically red or blue-purple",
+            "C) They develop from lateral ovaries and are typically green",
+            "D) They develop from compound ovaries and are always blue"
+        ],
+        "question": "What is a key characteristic of Vaccinium fruits?",
+        "source": "generated_from_facts",
+        "topic": "Vaccinia",
+        "wiki_title": "Vaccinium",
+        "wiki_url": "https://en.wikipedia.org/wiki/Vaccinium"
+    },
+    {
+        "answer": "A",
+        "choices": [
+            "A) Because it is meaningless and misleading",
+            "B) Because all heavy metals are toxic",
+            "C) Because it is too difficult to measure metal weight",
+            "D) Because light metals can also be toxic"
+        ],
+        "question": "Why has the International Union of Pure and Applied Chemistry (IUPAC) rejected the term 'heavy metals'?",
+        "source": "generated_from_facts",
+        "topic": "Toxic heavy metal",
+        "wiki_title": "Toxic heavy metal",
+        "wiki_url": "https://en.wikipedia.org/wiki/Toxic_heavy_metal"
+    },
+    {
+        "answer": "C",
+        "choices": [
+            "A) All toxic metals are heavy metals",
+            "B) All metals that are toxic in high doses are harmful in any quantity",
+            "C) Some metals that are toxic in high doses are essential in small amounts",
+            "D) Toxic metals only enter organisms through diet"
+        ],
+        "question": "Which statement about toxic metals is correct?",
+        "source": "generated_from_facts",
+        "topic": "Toxic heavy metal",
+        "wiki_title": "Toxic heavy metal",
+        "wiki_url": "https://en.wikipedia.org/wiki/Toxic_heavy_metal"
+    }
+]

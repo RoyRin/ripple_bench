@@ -104,3 +104,18 @@ If you use Ripple Bench in your research, please cite:
 ```
 [Citation pending]
 ```
+
+
+
+
+### July 4th notes on what needs to be done:
+
+0. roy to write up how to pull the wiki-rag RAG and the wikipedia dataset
+1. check that ripple-bench is correctly finding facts as we want (just do code-review)
+2. run dataset-generation process to extract facts
+3. write up the code for evaluating model on ripple-bench
+4. generate ripple effect results for `RMU` + `ELM` with nice plots.
+
+
+Potential Igor work:
+* 
