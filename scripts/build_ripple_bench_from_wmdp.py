@@ -27,7 +27,7 @@ from ripple_bench.utils import save_dict, read_dict
 from ripple_bench.models import load_zephyr
 
 from ripple_bench.construct_ripple_bench_structure import get_RAG, PromptedBGE
-
+from ripple_bench.extract_topics_and_neighbors import PromptedBGE
 class RippleBenchBuilder:
 
     def __init__(self,
@@ -237,7 +237,7 @@ Please format your response as a bulleted list using "•" symbols.'''
         # Import RAG components
         import sys
         sys.path.append('wiki-rag')
-        from scripts.extract_topics_and_neighbors import get_RAG, PromptedBGE
+        
 
         # Initialize RAG
         print("Initializing RAG system...")
