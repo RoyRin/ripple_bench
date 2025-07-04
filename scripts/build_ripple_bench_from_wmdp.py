@@ -94,6 +94,7 @@ class RippleBenchBuilder:
         if json_file.exists():
             print(f"Found existing topics at {json_file}")
             topics = read_dict(json_file)
+            print(f"  Loaded {len(topics)} topics")
             return pd.DataFrame(topics)
 
         # Check for cached results
@@ -129,7 +130,7 @@ class RippleBenchBuilder:
             })
 
             # Save intermediate results
-            if (start_idx + i + 1) % 10 == 0:
+            if (start_idx + i + 1) % 5 == 0:
                 save_dict(topics, temp_file)
 
         df = pd.DataFrame(topics)
@@ -198,7 +199,7 @@ Please format your response as a bulleted list using "•" symbols.'''
 
         try:
             print(
-                f"Extracting facts for {topic} (content length: {len(content)} chars)"
+                f"Extracting facts for `{topic}` (content length: {len(content)} chars)"
             )
             response = self.llm_function(prompt, model=self.fact_model, temperature=0.3)
             print(f"response is - {response}")
@@ -220,8 +221,8 @@ Please format your response as a bulleted list using "•" symbols.'''
                 print(f"Empty response for {topic}")
                 return f"• Unable to extract facts for {topic} - API response was empty or too short"
         except Exception as e:
-            print(f"Error calling LLM API for {topic}: {e}")
-            return f"• Error extracting facts for {topic}: {str(e)}"
+            print(f"Error calling LLM API for `{topic}`: {e}")
+            return f"• Error extracting facts for 1{topic}`: {str(e)}"
 
     def generate_ordered_topic_list(
             self,
@@ -237,7 +238,9 @@ Please format your response as a bulleted list using "•" symbols.'''
         final_file = self.neighbors_dir / "topic_neighbors.json"
         if final_file.exists():
             print(f"Found existing topic neighbors at {final_file}")
-            return read_dict(final_file)
+            neighbors = read_dict(final_file)
+            print(f"  Loaded neighbors for {len(neighbors)} topics")
+            return neighbors
 
         # Check for cached results
         if cache_file and Path(cache_file).exists():
@@ -295,7 +298,7 @@ Please format your response as a bulleted list using "•" symbols.'''
             topic_to_neighbors[topic] = sampled_neighbors[:k_neighbors]
 
             # Save intermediate results
-            if len(topic_to_neighbors) % 10 == 0:
+            if len(topic_to_neighbors) % 5 == 0:
                 save_dict(topic_to_neighbors, temp_file)
 
         # Save final results
@@ -319,7 +322,9 @@ Please format your response as a bulleted list using "•" symbols.'''
         final_file = self.facts_dir / "wiki_facts.json"
         if final_file.exists():
             print(f"Found existing facts at {final_file}")
-            return read_dict(final_file)
+            facts = read_dict(final_file)
+            print(f"  Loaded facts for {len(facts)} topics")
+            return facts
 
         # Check for cached results
         if cache_file and Path(cache_file).exists():
@@ -430,7 +435,7 @@ Please format your response as a bulleted list using "•" symbols.'''
                 }
 
             # Save intermediate results
-            if len(facts_dict) % 10 == 0:
+            if len(facts_dict) % 5 == 0:
                 save_dict(facts_dict, temp_file)
 
         # Save final results
@@ -453,7 +458,9 @@ Please format your response as a bulleted list using "•" symbols.'''
         final_file = self.questions_dir / "ripple_bench_questions.json"
         if final_file.exists():
             print(f"Found existing questions at {final_file}")
-            return read_dict(final_file)
+            questions = read_dict(final_file)
+            print(f"  Loaded {len(questions)} questions")
+            return questions
 
         # Check for cached results
         if cache_file and Path(cache_file).exists():
@@ -465,10 +472,17 @@ Please format your response as a bulleted list using "•" symbols.'''
         if temp_file.exists():
             print(f"Resuming from temporary file: {temp_file}")
             all_questions = read_dict(temp_file)
-            processed_topics = {q['topic'] for q in all_questions}
+            # Count questions per topic to handle partial generation
+            questions_per_topic_count = {}
+            for q in all_questions:
+                topic = q['topic']
+                questions_per_topic_count[topic] = questions_per_topic_count.get(topic, 0) + 1
+            processed_topics = {topic for topic, count in questions_per_topic_count.items() 
+                              if count >= questions_per_topic}
         else:
             all_questions = []
             processed_topics = set()
+            questions_per_topic_count = {}
 
         remaining_topics = [(topic, fact_data) for topic, fact_data in facts_dict.items() 
                             if topic not in processed_topics]
@@ -529,9 +543,12 @@ Only return the JSON list, no other text."""
                 print(f"Error generating questions for {topic}: {e}")
 
             # Save intermediate results
-            if len(all_questions) % 50 == 0:
+            if len(all_questions) % 5 == 0:
                 save_dict(all_questions, temp_file)
 
+        # Deduplicate questions before saving
+        all_questions = self._validate_and_deduplicate_questions(all_questions)
+        
         # Save final results
         save_dict(all_questions, final_file)
 
@@ -588,6 +605,25 @@ Only return the JSON list, no other text."""
                     })
         
         return topics_list
+
+    def _validate_and_deduplicate_questions(self, questions: List[Dict]) -> List[Dict]:
+        """Remove duplicate questions based on question text."""
+        seen_questions = set()
+        unique_questions = []
+        duplicates = 0
+        
+        for q in questions:
+            q_text = q.get('question', '')
+            if q_text and q_text not in seen_questions:
+                seen_questions.add(q_text)
+                unique_questions.append(q)
+            else:
+                duplicates += 1
+        
+        if duplicates > 0:
+            print(f"Removed {duplicates} duplicate questions")
+        
+        return unique_questions
 
     def build_dataset(self,
                       wmdp_path: str,

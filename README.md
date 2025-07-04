@@ -87,7 +87,35 @@ This will:
 - Extract facts from Wikipedia articles
 - Generate evaluation questions for each topic
 
-### 2. Evaluate Models
+### 2. Upload to Hugging Face
+
+To share your generated dataset on Hugging Face Hub:
+
+```bash
+# Upload to default repository (royrin/ripple-bench)
+python scripts/upload_ripple_bench_to_hf.py path/to/ripple_bench_dataset.json
+
+# Upload to custom repository
+python scripts/upload_ripple_bench_to_hf.py dataset.json --repo-id username/dataset-name
+```
+
+Make sure you're logged in to Hugging Face: `huggingface-cli login`
+
+### 4. Download from Hugging Face
+
+To download a previously uploaded Ripple Bench dataset:
+
+```bash
+# Download from default repository (royrin/ripple-bench) # --output-dir /path/to/save --output-name my_dataset.json
+python scripts/download_ripple_bench.py 
+```
+
+The downloaded dataset will be ready for use with `evaluate_ripple_bench.py`.
+
+### Evaluation
+
+
+### Evaluate Models
 
 ```bash
 python scripts/evaluate_ripple_bench.py \
@@ -102,19 +130,6 @@ This produces:
 - Ripple effect visualizations showing performance vs. topic distance
 - Detailed analysis reports
 
-### 3. Upload to Hugging Face
-
-To share your generated dataset on Hugging Face Hub:
-
-```bash
-# Upload to default repository (royrin/ripple-bench)
-python scripts/upload_ripple_bench_to_hf.py path/to/ripple_bench_dataset.json
-
-# Upload to custom repository
-python scripts/upload_ripple_bench_to_hf.py dataset.json --repo-id username/dataset-name
-```
-
-Make sure you're logged in to Hugging Face: `huggingface-cli login`
 
 ## Configuration
 
@@ -146,6 +161,8 @@ scripts/                # Executable scripts
 ├── build_ripple_bench_from_wmdp.py  # Dataset creation
 ├── evaluate_ripple_bench.py         # Model evaluation
 ├── upload_ripple_bench_to_hf.py     # Upload dataset to Hugging Face
+├── download_ripple_bench.py         # Download dataset from Hugging Face
+├── check_anthropic_spending.py      # Check API usage costs
 ├── test_wiki_rag.py                 # Test WikiRAG setup
 ├── setup_wiki_rag.py                # Download wiki-rag FAISS index
 ├── setup_wikipedia_dataset.py       # Download Wikipedia dataset

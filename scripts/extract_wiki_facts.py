@@ -81,7 +81,7 @@ Please format your response as a bulleted list using "•" symbols.'''
 
         try:
             print(
-                f"Extracting facts for {topic} (content length: {len(content)} chars)"
+                f"Extracting facts for `{topic}` (content length: {len(content)} chars)"
             )
             response = self.llm_function(prompt,
                                          temperature=0.3,
@@ -98,8 +98,8 @@ Please format your response as a bulleted list using "•" symbols.'''
                 print(f"Empty or short response for {topic}: '{response}'")
                 return f"• Unable to extract facts for {topic} - API response was empty or too short"
         except Exception as e:
-            print(f"Error calling LLM API for {topic}: {e}")
-            return f"• Error extracting facts for {topic}: {str(e)}"
+            print(f"Error calling LLM API for `{topic}`: {e}")
+            return f"• Error extracting facts for `{topic}`: {str(e)}"
 
     def extract_facts_from_topic(self,
                                  topic: str,
