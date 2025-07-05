@@ -6,6 +6,12 @@ if [ -z "$FILES" ]; then
     exit 0
 fi
 
+# Check if yapf is available
+if ! command -v yapf &> /dev/null; then
+    echo "Warning: yapf not found, skipping Python formatting"
+    exit 0
+fi
+
 for file in $FILES; do
     yapf -i "$file"
     git add "$file"
