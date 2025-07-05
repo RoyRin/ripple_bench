@@ -36,7 +36,7 @@ class RippleBenchBuilder:
                  use_timestamp: bool = False,
                  topic_model: str = "claude-4-sonnet",
                  fact_model: str = "claude-4-sonnet",
-                 question_model: str = "claude-4-opus"):
+                 question_model: str = "claude-4-sonnet"):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -776,8 +776,8 @@ def main():
         help="Model to use for fact extraction (default: claude-4-sonnet)")
     parser.add_argument(
         "--question-model",
-        default="claude-4-opus",
-        help="Model to use for question generation (default: claude-4-opus)")
+        default="claude-4-sonnet",
+        help="Model to use for question generation (default: claude-4-sonnet)")
 
     args = parser.parse_args()
 
