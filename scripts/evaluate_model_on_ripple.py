@@ -185,13 +185,22 @@ def main():
     parser.add_argument("--cache-dir",
                         default=None,
                         help="Cache directory for HuggingFace models")
+    parser.add_argument(
+        "--hf-cache",
+        default=None,
+        help=
+        "HuggingFace cache directory (e.g., /n/netscratch/vadhan_lab/Lab/rrinberg/HF_cache)"
+    )
 
     args = parser.parse_args()
+
+    # Use hf_cache if provided, otherwise fall back to cache_dir
+    cache_directory = args.hf_cache or args.cache_dir
 
     evaluate_model(dataset_path=args.dataset_path,
                    model_name=args.model_name,
                    output_csv=args.output_csv,
-                   cache_dir=args.cache_dir)
+                   cache_dir=cache_directory)
 
 
 if __name__ == "__main__":
