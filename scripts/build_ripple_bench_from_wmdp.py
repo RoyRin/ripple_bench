@@ -17,8 +17,10 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 from tqdm import tqdm
+import concurrent.futures
+from functools import partial
 
 from ripple_bench.generate_ripple_questions import extract_bulleted_facts
 from ripple_bench.openai_utils import huit_OAI_function
@@ -232,7 +234,151 @@ Please format your response as a bulleted list using "•" symbols.'''
                 return f"• Unable to extract facts for {topic} - API response was empty or too short"
         except Exception as e:
             print(f"Error calling LLM API for `{topic}`: {e}")
-            return f"• Error extracting facts for 1{topic}`: {str(e)}"
+            return f"• Error extracting facts for {topic}: {str(e)}"
+
+    def _process_single_topic(self,
+                              topic: str,
+                              use_local_wikipedia: bool,
+                              local_wiki=None,
+                              wikipedia=None) -> Tuple[str, Dict]:
+        """Process a single topic for fact extraction - designed for parallel execution"""
+        # Skip unknown topics
+        if topic.lower() in ["unknown topic", "unknown", ""]:
+            return topic, {
+                'facts': f"Skipped: Invalid topic '{topic}'",
+                'url': None,
+                'title': topic
+            }
+
+        try:
+            if use_local_wikipedia:
+                # Use local Wikipedia
+                article = local_wiki.get_article(topic)
+                if article:
+                    content = article.get('text', '')[:self.wiki_content_size]
+                    page_title = article.get('title', topic)
+                    page_url = f"https://en.wikipedia.org/wiki/{page_title.replace(' ', '_')}"
+                    print(
+                        f"  📁 LOCAL: Retrieved '{page_title}' for topic '{topic}'"
+                    )
+                else:
+                    return topic, {
+                        'facts':
+                        f"Article not found in local Wikipedia: {topic}",
+                        'url': None,
+                        'title': topic
+                    }
+            else:
+                # Use online Wikipedia
+                print(f"  🌐 API: Fetching '{topic}'...")
+                page = wikipedia.page(topic)
+                content = page.content[:self.wiki_content_size]
+                page_title = page.title
+                page_url = page.url
+                print(f"  ✅ API: Retrieved '{page_title}' for topic '{topic}'")
+
+            # Skip if content is too short
+            if len(content) < 100:
+                return topic, {
+                    'facts': f"No substantial content found for {topic}",
+                    'url': page_url,
+                    'title': page_title
+                }
+
+            # Extract facts using API
+            facts = self._extract_facts_via_api(content, topic)
+
+            return topic, {
+                'facts': facts,
+                'url': page_url,
+                'title': page_title
+            }
+
+        except Exception as e:
+            if not use_local_wikipedia and hasattr(e, 'options'):
+                # Handle disambiguation error for online Wikipedia
+                try:
+                    print(
+                        f"  🔄 API: Disambiguation for '{topic}', trying '{e.options[0]}'..."
+                    )
+                    page = wikipedia.page(e.options[0])
+                    content = page.content[:self.wiki_content_size]
+                    page_title = page.title
+                    page_url = page.url
+                    print(
+                        f"  ✅ API: Retrieved '{page_title}' via disambiguation"
+                    )
+
+                    facts = self._extract_facts_via_api(content, e.options[0])
+
+                    return topic, {
+                        'facts': facts,
+                        'url': page_url,
+                        'title': page_title
+                    }
+                except Exception as e2:
+                    print(
+                        f"  ❌ API: Failed to retrieve '{topic}' even with disambiguation: {e2}"
+                    )
+            else:
+                source = "LOCAL" if use_local_wikipedia else "API"
+                print(f"  ❌ {source}: Error processing '{topic}': {e}")
+
+            return topic, {
+                'facts': f"No facts available for {topic}",
+                'url': None,
+                'title': topic
+            }
+
+    def _extract_facts_parallel(self, remaining_topics: List[str],
+                                facts_dict: Dict, use_local_wikipedia: bool,
+                                local_wiki, max_workers: int, temp_file: Path):
+        """Extract facts in parallel using ThreadPoolExecutor"""
+        # Import wikipedia if needed
+        wikipedia = None
+        if not use_local_wikipedia:
+            import wikipedia as wiki_module
+            wikipedia = wiki_module
+
+        # Create a partial function with fixed parameters
+        process_func = partial(self._process_single_topic,
+                               use_local_wikipedia=use_local_wikipedia,
+                               local_wiki=local_wiki,
+                               wikipedia=wikipedia)
+
+        # Use ThreadPoolExecutor for I/O-bound tasks
+        with concurrent.futures.ThreadPoolExecutor(
+                max_workers=max_workers) as executor:
+            # Submit all tasks
+            future_to_topic = {
+                executor.submit(process_func, topic): topic
+                for topic in remaining_topics
+            }
+
+            # Process completed tasks with progress bar
+            with tqdm(total=len(remaining_topics),
+                      desc="Processing topics") as pbar:
+                for future in concurrent.futures.as_completed(future_to_topic):
+                    try:
+                        topic, result = future.result()
+                        facts_dict[topic] = result
+                        pbar.update(1)
+
+                        # Save intermediate results periodically
+                        if len(facts_dict) % 20 == 0:
+                            save_dict(facts_dict, temp_file)
+                    except Exception as e:
+                        topic = future_to_topic[future]
+                        print(
+                            f"  ❌ Error in parallel processing for '{topic}': {e}"
+                        )
+                        facts_dict[topic] = {
+                            'facts':
+                            f"Error during parallel processing: {str(e)}",
+                            'url': None,
+                            'title': topic
+                        }
+                        pbar.update(1)
 
     def generate_ordered_topic_list(
             self,
@@ -331,7 +477,8 @@ Please format your response as a bulleted list using "•" symbols.'''
             topic_to_neighbors: Dict[str, List[str]],
             cache_file: str = None,
             use_local_model: bool = False,
-            use_local_wikipedia: bool = False) -> Dict[str, Dict[str, str]]:
+            use_local_wikipedia: bool = False,
+            max_workers: int = 1) -> Dict[str, Dict[str, str]]:
         """Extract facts from Wikipedia articles for topics and their neighbors."""
         print("Extracting facts from Wikipedia articles...")
 
@@ -395,124 +542,136 @@ Please format your response as a bulleted list using "•" symbols.'''
         print(
             f"Extracting facts for {len(remaining_topics)} remaining topics (already processed: {len(processed_topics)})"
         )
-        for topic in tqdm(remaining_topics):
-            # Skip unknown topics
-            if topic.lower() in ["unknown topic", "unknown", ""]:
-                facts_dict[topic] = {
-                    'facts': f"Skipped: Invalid topic '{topic}'",
-                    'url': None,
-                    'title': topic
-                }
-                continue
 
-            try:
-                if use_local_wikipedia:
-                    # Use local Wikipedia
-                    article = local_wiki.get_article(topic)
-                    if article:
-                        content = article.get('text',
-                                              '')[:self.wiki_content_size]
-                        page_title = article.get('title', topic)
-                        page_url = f"https://en.wikipedia.org/wiki/{page_title.replace(' ', '_')}"
-                        print(
-                            f"  📁 LOCAL: Retrieved '{page_title}' for topic '{topic}'"
-                        )
-                    else:
-                        facts_dict[topic] = {
-                            'facts':
-                            f"Article not found in local Wikipedia: {topic}",
-                            'url': None,
-                            'title': topic
-                        }
-                        print(f"  ❌ LOCAL: Not found '{topic}'")
-                        continue
-                else:
-                    # Use online Wikipedia
-                    print(f"  🌐 API: Fetching '{topic}'...")
-                    page = wikipedia.page(topic)
-                    content = page.content[:self.
-                                           wiki_content_size]  # Limit content length
-                    page_title = page.title
-                    page_url = page.url
-                    print(
-                        f"  ✅ API: Retrieved '{page_title}' for topic '{topic}'"
-                    )
-
-                # HACK: print the content
-                # print(f"content is - {content}")
-
-                # Skip if content is too short
-                if len(content) < 100:
+        # Use parallel processing if max_workers > 1
+        if max_workers > 1 and not use_local_model:
+            print(f"Using {max_workers} parallel workers for fact extraction")
+            self._extract_facts_parallel(
+                remaining_topics, facts_dict, use_local_wikipedia,
+                local_wiki if use_local_wikipedia else None, max_workers,
+                temp_file)
+        else:
+            # Sequential processing
+            for topic in tqdm(remaining_topics):
+                # Skip unknown topics
+                if topic.lower() in ["unknown topic", "unknown", ""]:
                     facts_dict[topic] = {
-                        'facts': f"No substantial content found for {topic}",
-                        'url': page_url,
-                        'title': page_title
+                        'facts': f"Skipped: Invalid topic '{topic}'",
+                        'url': None,
+                        'title': topic
                     }
                     continue
 
-                # Extract facts using model or API
-                if use_local_model:
-                    facts = extract_bulleted_facts(content,
-                                                   model,
-                                                   tokenizer,
-                                                   max_new_tokens=350)
-                else:
-                    facts = self._extract_facts_via_api(content, topic)
-
-                facts_dict[topic] = {
-                    'facts': facts,
-                    'url': page_url,
-                    'title': page_title
-                }
-            except Exception as e:
-                if not use_local_wikipedia and hasattr(e, 'options'):
-                    # Handle disambiguation error for online Wikipedia
-                    try:
-                        print(
-                            f"  🔄 API: Disambiguation for '{topic}', trying '{e.options[0]}'..."
-                        )
-                        page = wikipedia.page(e.options[0])
-                        content = page.content[:self.wiki_content_size]
+                try:
+                    if use_local_wikipedia:
+                        # Use local Wikipedia
+                        article = local_wiki.get_article(topic)
+                        if article:
+                            content = article.get('text',
+                                                  '')[:self.wiki_content_size]
+                            page_title = article.get('title', topic)
+                            page_url = f"https://en.wikipedia.org/wiki/{page_title.replace(' ', '_')}"
+                            print(
+                                f"  📁 LOCAL: Retrieved '{page_title}' for topic '{topic}'"
+                            )
+                        else:
+                            facts_dict[topic] = {
+                                'facts':
+                                f"Article not found in local Wikipedia: {topic}",
+                                'url': None,
+                                'title': topic
+                            }
+                            print(f"  ❌ LOCAL: Not found '{topic}'")
+                            continue
+                    else:
+                        # Use online Wikipedia
+                        print(f"  🌐 API: Fetching '{topic}'...")
+                        page = wikipedia.page(topic)
+                        content = page.content[:self.
+                                               wiki_content_size]  # Limit content length
                         page_title = page.title
                         page_url = page.url
                         print(
-                            f"  ✅ API: Retrieved '{page_title}' via disambiguation"
+                            f"  ✅ API: Retrieved '{page_title}' for topic '{topic}'"
                         )
-                        if use_local_model:
-                            facts = extract_bulleted_facts(content,
-                                                           model,
-                                                           tokenizer,
-                                                           max_new_tokens=350)
-                        else:
-                            facts = self._extract_facts_via_api(
-                                content, e.options[0])
+
+                    # HACK: print the content
+                    # print(f"content is - {content}")
+
+                    # Skip if content is too short
+                    if len(content) < 100:
                         facts_dict[topic] = {
-                            'facts': facts,
+                            'facts':
+                            f"No substantial content found for {topic}",
                             'url': page_url,
                             'title': page_title
                         }
-                    except Exception as e2:
-                        print(
-                            f"  ❌ API: Failed to retrieve '{topic}' even with disambiguation: {e2}"
-                        )
+                        continue
+
+                    # Extract facts using model or API
+                    if use_local_model:
+                        facts = extract_bulleted_facts(content,
+                                                       model,
+                                                       tokenizer,
+                                                       max_new_tokens=350)
+                    else:
+                        facts = self._extract_facts_via_api(content, topic)
+
+                    facts_dict[topic] = {
+                        'facts': facts,
+                        'url': page_url,
+                        'title': page_title
+                    }
+                except Exception as e:
+                    if not use_local_wikipedia and hasattr(e, 'options'):
+                        # Handle disambiguation error for online Wikipedia
+                        try:
+                            print(
+                                f"  🔄 API: Disambiguation for '{topic}', trying '{e.options[0]}'..."
+                            )
+                            page = wikipedia.page(e.options[0])
+                            content = page.content[:self.wiki_content_size]
+                            page_title = page.title
+                            page_url = page.url
+                            print(
+                                f"  ✅ API: Retrieved '{page_title}' via disambiguation"
+                            )
+                            if use_local_model:
+                                facts = extract_bulleted_facts(
+                                    content,
+                                    model,
+                                    tokenizer,
+                                    max_new_tokens=350)
+                            else:
+                                facts = self._extract_facts_via_api(
+                                    content, e.options[0])
+                            facts_dict[topic] = {
+                                'facts': facts,
+                                'url': page_url,
+                                'title': page_title
+                            }
+                        except Exception as e2:
+                            print(
+                                f"  ❌ API: Failed to retrieve '{topic}' even with disambiguation: {e2}"
+                            )
+                            facts_dict[topic] = {
+                                'facts': f"No facts available for {topic}",
+                                'url': None,
+                                'title': topic
+                            }
+                    else:
+                        # Other errors or local Wikipedia not found
+                        source = "LOCAL" if use_local_wikipedia else "API"
+                        print(f"  ❌ {source}: Error processing '{topic}': {e}")
                         facts_dict[topic] = {
                             'facts': f"No facts available for {topic}",
                             'url': None,
                             'title': topic
                         }
-                else:
-                    # Other errors or local Wikipedia not found
-                    source = "LOCAL" if use_local_wikipedia else "API"
-                    print(f"  ❌ {source}: Error processing '{topic}': {e}")
-                    facts_dict[topic] = {
-                        'facts': f"No facts available for {topic}",
-                        'url': None,
-                        'title': topic
-                    }
 
-            # Save intermediate results
-            if len(facts_dict) % 5 == 0:
-                save_dict(facts_dict, temp_file)
+                # Save intermediate results
+                if len(facts_dict) % 5 == 0:
+                    save_dict(facts_dict, temp_file)
 
         # Save final results
         save_dict(facts_dict, final_file)
@@ -724,7 +883,8 @@ Only return the JSON list, no other text."""
                       questions_per_topic: int = 5,
                       use_cache: bool = False,
                       use_local_model: bool = False,
-                      use_local_wikipedia: bool = False):
+                      use_local_wikipedia: bool = False,
+                      max_workers: int = 1):
         """Build complete ripple bench dataset from WMDP."""
 
         print(f"Building Ripple Bench dataset from WMDP")
@@ -764,7 +924,8 @@ Only return the JSON list, no other text."""
             topic_to_neighbors,
             cache_file=cache_files.get('facts'),
             use_local_model=use_local_model,
-            use_local_wikipedia=use_local_wikipedia)
+            use_local_wikipedia=use_local_wikipedia,
+            max_workers=max_workers)
 
         # Step 5: Generate questions
         generated_questions = self.generate_questions_from_facts(
@@ -889,6 +1050,13 @@ def main():
         help=
         "Path to Wikipedia JSON directory for local access (default: /Users/roy/data/wikipedia/wikipedia/json)"
     )
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=1,
+        help=
+        "Number of parallel workers for fact extraction (default: 1, sequential)"
+    )
 
     args = parser.parse_args()
 
@@ -916,6 +1084,10 @@ def main():
     print(
         f"Neighbor sampling: {args.k_neighbors} neighbors from every {args.neighbor_sample_step}th position (out of first 300)"
     )
+    if args.max_workers > 1:
+        print(
+            f"Parallel processing: {args.max_workers} workers for fact extraction"
+        )
 
     dataset = builder.build_dataset(
         wmdp_path=args.wmdp_path,
@@ -925,7 +1097,8 @@ def main():
         questions_per_topic=args.questions_per_topic,
         use_cache=args.use_cache,
         use_local_model=args.use_local_model,
-        use_local_wikipedia=args.use_local_wikipedia)
+        use_local_wikipedia=args.use_local_wikipedia,
+        max_workers=args.max_workers)
 
 
 if __name__ == "__main__":
