@@ -98,6 +98,20 @@ def evaluate_model(dataset_path: str,
 
     for i, q in enumerate(tqdm(questions, desc="Evaluating")):
         try:
+            # Validate question format
+            if not isinstance(q.get('question'), str):
+                print(
+                    f"Warning: Question {i} has invalid question field: {type(q.get('question'))}"
+                )
+                print(f"Question data: {q}")
+                continue
+
+            if not isinstance(q.get('choices'), list):
+                print(
+                    f"Warning: Question {i} has invalid choices field: {type(q.get('choices'))}"
+                )
+                continue
+
             # Get model response
             response = answer_single_question(q['question'], q['choices'],
                                               model, tokenizer)
@@ -125,18 +139,41 @@ def evaluate_model(dataset_path: str,
 
         except Exception as e:
             print(f"Error on question {i}: {e}")
+            print(
+                f"Question type: {type(q.get('question'))}, Choices type: {type(q.get('choices'))}"
+            )
+            if i == 218958:  # Debug the specific problematic question
+                print(f"Question 218958 data: {q}")
+            # Try to safely extract question text
+            question_text = q.get('question', '')
+            if isinstance(question_text, list):
+                question_text = ' '.join(str(item) for item in question_text)
+            else:
+                question_text = str(question_text)
+
             results.append({
-                'question_id': i,
-                'question': q['question'],
-                'choices': '|'.join(q['choices']),
-                'correct_answer': q['answer'],
-                'model_response': 'ERROR',
-                'is_correct': False,
-                'topic': q.get('topic', 'unknown'),
-                'distance': q.get('distance', -1),
-                'source': q.get('source', 'unknown'),
-                'model_name': model_name,
-                'error': str(e)
+                'question_id':
+                i,
+                'question':
+                question_text,
+                'choices':
+                '|'.join(str(c) for c in q.get('choices', [])),
+                'correct_answer':
+                str(q.get('answer', '')),
+                'model_response':
+                'ERROR',
+                'is_correct':
+                False,
+                'topic':
+                q.get('topic', 'unknown'),
+                'distance':
+                q.get('distance', -1),
+                'source':
+                q.get('source', 'unknown'),
+                'model_name':
+                model_name,
+                'error':
+                str(e)
             })
 
     # Convert to DataFrame and save
