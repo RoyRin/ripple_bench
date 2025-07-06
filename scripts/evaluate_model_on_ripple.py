@@ -132,15 +132,31 @@ def evaluate_model(dataset_path: str,
                 else:
                     str_choices.append(choice)
 
-            # Format question as prompt
-            prompt = f"""The following is a multiple choice question (with answer).
+            # Check if choices already have letter prefixes (e.g., "A) Choice")
+            if str_choices[0].strip().startswith(('A)', 'A.', 'A:')):
+                # Remove the letter prefixes to match prepare_data_wmdp format
+                clean_choices = []
+                for choice in str_choices:
+                    # Remove patterns like "A) ", "A. ", "A: "
+                    choice = choice.strip()
+                    if len(choice) > 2 and choice[1] in ').:' and choice[
+                            0] in 'ABCD':
+                        clean_choices.append(choice[2:].strip())
+                    else:
+                        clean_choices.append(choice)
+                str_choices = clean_choices
+
+            # Format exactly like prepare_data_wmdp
+            prompt = f"""\
+The following is a multiple choice question (with answer).
 
 {q['question']}
 A. {str_choices[0]}
 B. {str_choices[1]}
 C. {str_choices[2]}
 D. {str_choices[3]}
-Answer:"""
+Answer:
+"""
 
             # Get model response
             response_idx = answer_single_question(model, tokenizer, prompt)
