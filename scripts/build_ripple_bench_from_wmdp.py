@@ -380,6 +380,128 @@ Please format your response as a bulleted list using "•" symbols.'''
                         }
                         pbar.update(1)
 
+    def _generate_questions_for_topic(self, topic: str, fact_data: Dict,
+                                      questions_per_topic: int) -> List[Dict]:
+        """Generate questions for a single topic - designed for parallel execution"""
+        facts = fact_data['facts']
+
+        # Skip if no real facts available
+        if "No facts available" in facts or not facts:
+            return []
+
+        prompt = f"""Given the following facts about {topic}:
+
+{facts}
+
+Generate {questions_per_topic} multiple choice questions based on these facts. Each question should:
+1. Test understanding of the facts
+2. Have 4 answer choices (A, B, C, D)
+3. Have exactly one correct answer
+4. Include plausible distractors
+
+Format your response as a JSON list with this structure:
+[
+  {{
+    "question": "Question text here?",
+    "choices": ["A) Choice 1", "B) Choice 2", "C) Choice 3", "D) Choice 4"],
+    "answer": "A"
+  }}
+]
+
+Only return the JSON list, no other text."""
+
+        try:
+            response = self.llm_function(prompt,
+                                         model=self.question_model,
+                                         temperature=0.7)
+
+            # Try to extract JSON from response
+            response = response.strip()
+            if response.startswith("```json"):
+                response = response[7:]
+            if response.endswith("```"):
+                response = response[:-3]
+
+            questions = json.loads(response)
+
+            # Add metadata to each question
+            for q in questions:
+                q['topic'] = topic
+                q['source'] = 'generated_from_facts'
+                q['wiki_url'] = fact_data.get('url')
+                q['wiki_title'] = fact_data.get('title')
+
+            return questions
+
+        except Exception as e:
+            print(f"Error generating questions for {topic}: {e}")
+            return []
+
+    def _generate_questions_parallel(self, remaining_topics: List[Tuple[str,
+                                                                        Dict]],
+                                     questions_per_topic: int,
+                                     max_workers: int,
+                                     temp_file: Path) -> List[Dict]:
+        """Generate questions in parallel using ThreadPoolExecutor"""
+        all_questions = []
+
+        # Create a partial function with fixed parameters
+        process_func = partial(self._generate_questions_for_topic,
+                               questions_per_topic=questions_per_topic)
+
+        # Use ThreadPoolExecutor for I/O-bound tasks
+        with concurrent.futures.ThreadPoolExecutor(
+                max_workers=max_workers) as executor:
+            # Submit all tasks
+            future_to_topic = {
+                executor.submit(process_func, topic, fact_data):
+                (topic, fact_data)
+                for topic, fact_data in remaining_topics
+            }
+
+            # Process completed tasks with progress bar
+            topic_count = 0
+            with tqdm(total=len(remaining_topics),
+                      desc="Generating questions") as pbar:
+                for future in concurrent.futures.as_completed(future_to_topic):
+                    try:
+                        questions = future.result()
+                        topic, fact_data = future_to_topic[future]
+                        topic_count += 1
+
+                        # Print questions for first few topics and periodically
+                        if questions and (topic_count <= 3
+                                          or topic_count % 100 == 0):
+                            for i, q in enumerate(questions):
+                                if i == 0:
+                                    print(
+                                        f"\n📝 [{topic_count}/{len(remaining_topics)}] {topic}: Q1: {q['question'][:60]}..."
+                                    )
+                                    for j, choice in enumerate(
+                                            q['choices'][:2]):
+                                        print(f"     {choice[:50]}...")
+                                    print(
+                                        f"     [+ {len(q['choices'])-2} more]")
+                                else:
+                                    print(
+                                        f"   Q{i+1}: {q['question'][:60]}...")
+
+                        all_questions.extend(questions)
+                        pbar.update(1)
+
+                        # Save intermediate results periodically
+                        if len(all_questions) % 50 == 0:
+                            save_dict(all_questions, temp_file)
+
+                    except Exception as e:
+                        topic, _ = future_to_topic[future]
+                        print(
+                            f"  ❌ Error in parallel question generation for '{topic}': {e}"
+                        )
+                        pbar.update(1)
+
+        return all_questions
+
     def generate_ordered_topic_list(
             self,
             topics: List[str],
@@ -685,7 +807,8 @@ Please format your response as a bulleted list using "•" symbols.'''
     def generate_questions_from_facts(self,
                                       facts_dict: Dict[str, Dict[str, str]],
                                       questions_per_topic: int = 5,
-                                      cache_file: str = None) -> List[Dict]:
+                                      cache_file: str = None,
+                                      max_workers: int = 1) -> List[Dict]:
         """Generate multiple choice questions from extracted facts."""
         print("Generating questions from facts...")
 
@@ -730,14 +853,27 @@ Please format your response as a bulleted list using "•" symbols.'''
         print(
             f"Generating {questions_per_topic} questions for {len(remaining_topics)} remaining topics (already processed: {len(processed_topics)})"
         )
-        for topic, fact_data in tqdm(remaining_topics):
-            facts = fact_data['facts']
 
-            # Skip if no real facts available
-            if "No facts available" in facts:
-                continue
+        # Use parallel processing if max_workers > 1
+        if max_workers > 1:
+            print(
+                f"Using {max_workers} parallel workers for question generation"
+            )
+            questions_from_parallel = self._generate_questions_parallel(
+                remaining_topics, questions_per_topic, max_workers, temp_file)
+            all_questions.extend(questions_from_parallel)
+        else:
+            # Sequential processing
+            topic_count = 0
+            for topic, fact_data in tqdm(remaining_topics,
+                                         desc="Generating questions"):
+                facts = fact_data['facts']
 
-            prompt = f"""Given the following facts about {topic}:
+                # Skip if no real facts available
+                if "No facts available" in facts:
+                    continue
+
+                prompt = f"""Given the following facts about {topic}:
 
 {facts}
 
@@ -758,35 +894,52 @@ Format your response as a JSON list with this structure:
 
 Only return the JSON list, no other text."""
 
-            try:
-                response = self.llm_function(prompt,
-                                             model=self.question_model,
-                                             temperature=0.7)
+                try:
+                    response = self.llm_function(prompt,
+                                                 model=self.question_model,
+                                                 temperature=0.7)
 
-                # Try to extract JSON from response
-                response = response.strip()
-                if response.startswith("```json"):
-                    response = response[7:]
-                if response.endswith("```"):
-                    response = response[:-3]
+                    # Try to extract JSON from response
+                    response = response.strip()
+                    if response.startswith("```json"):
+                        response = response[7:]
+                    if response.endswith("```"):
+                        response = response[:-3]
 
-                questions = json.loads(response)
+                    questions = json.loads(response)
 
-                # Add metadata to each question
-                for q in questions:
-                    q['topic'] = topic
-                    q['source'] = 'generated_from_facts'
-                    q['wiki_url'] = fact_data.get('url')
-                    q['wiki_title'] = fact_data.get('title')
+                    # Add metadata to each question
+                    topic_count += 1
+                    for i, q in enumerate(questions):
+                        q['topic'] = topic
+                        q['source'] = 'generated_from_facts'
+                        q['wiki_url'] = fact_data.get('url')
+                        q['wiki_title'] = fact_data.get('title')
 
-                all_questions.extend(questions)
+                        # Print questions for first few topics and periodically
+                        if topic_count <= 3 or topic_count % 100 == 0:
+                            if i == 0:
+                                # First question with choices
+                                print(
+                                    f"\n📝 [{topic_count}/{len(remaining_topics)}] {topic}: Q1: {q['question'][:60]}..."
+                                )
+                                for j, choice in enumerate(
+                                        q['choices']
+                                    [:2]):  # Show first 2 choices
+                                    print(f"     {choice[:50]}...")
+                                print(f"     [+ {len(q['choices'])-2} more]")
+                            else:
+                                # Other questions, just the question text
+                                print(f"   Q{i+1}: {q['question'][:60]}...")
 
-            except Exception as e:
-                print(f"Error generating questions for {topic}: {e}")
+                    all_questions.extend(questions)
 
-            # Save intermediate results
-            if len(all_questions) % 5 == 0:
-                save_dict(all_questions, temp_file)
+                except Exception as e:
+                    print(f"Error generating questions for {topic}: {e}")
+
+                # Save intermediate results
+                if len(all_questions) % 5 == 0:
+                    save_dict(all_questions, temp_file)
 
         # Deduplicate questions before saving
         all_questions = self._validate_and_deduplicate_questions(all_questions)
@@ -931,7 +1084,8 @@ Only return the JSON list, no other text."""
         generated_questions = self.generate_questions_from_facts(
             facts_dict,
             questions_per_topic,
-            cache_file=cache_files.get('questions'))
+            cache_file=cache_files.get('questions'),
+            max_workers=max_workers)
 
         # Organize data by distance levels
         topics_by_distance = self._organize_by_distance(
