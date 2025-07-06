@@ -28,6 +28,8 @@ from ripple_bench.models import load_zephyr
 
 from ripple_bench.construct_ripple_bench_structure import get_RAG, PromptedBGE
 from ripple_bench.extract_topics_and_neighbors import PromptedBGE
+
+
 class RippleBenchBuilder:
 
     def __init__(self,
@@ -36,13 +38,17 @@ class RippleBenchBuilder:
                  use_timestamp: bool = False,
                  topic_model: str = "claude-4-sonnet",
                  fact_model: str = "claude-4-sonnet",
-                 question_model: str = "claude-4-sonnet"):
+                 question_model: str = "claude-4-sonnet",
+                 wiki_content_size: int = 6000,
+                 wiki_json_path: str = None):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.llm_provider = llm_provider
         self.use_timestamp = use_timestamp
-        
+        self.wiki_content_size = wiki_content_size
+        self.wiki_json_path = wiki_json_path
+
         # Model settings for different tasks
         self.topic_model = topic_model
         self.fact_model = fact_model
@@ -161,7 +167,9 @@ Important:
 
 Topic:'''
 
-        response = self.llm_function(prompt, model=self.topic_model, temperature=0.3)
+        response = self.llm_function(prompt,
+                                     model=self.topic_model,
+                                     temperature=0.3)
         if response and response.strip() and response.strip().lower() not in [
                 "unknown", "unknown topic", "n/a", "none"
         ]:
@@ -201,7 +209,9 @@ Please format your response as a bulleted list using "•" symbols.'''
             print(
                 f"Extracting facts for `{topic}` (content length: {len(content)} chars)"
             )
-            response = self.llm_function(prompt, model=self.fact_model, temperature=0.3)
+            response = self.llm_function(prompt,
+                                         model=self.fact_model,
+                                         temperature=0.3)
             print(f"response is - {response}")
             if response:
                 response_len = len(response.strip())
@@ -250,7 +260,6 @@ Please format your response as a bulleted list using "•" symbols.'''
         # Import RAG components
         import sys
         sys.path.append('wiki-rag')
-        
 
         # Initialize RAG
         print("Initializing RAG system...")
@@ -268,14 +277,21 @@ Please format your response as a bulleted list using "•" symbols.'''
             processed_topics = set()
 
         unique_topics = list(set(topics))
-        remaining_topics = [t for t in unique_topics if t not in processed_topics]
+        remaining_topics = [
+            t for t in unique_topics if t not in processed_topics
+        ]
 
-        print(f"Processing {len(remaining_topics)} remaining topics (already processed: {len(processed_topics)})")
-        print(f"Fetching {max_neighbors_to_fetch} neighbors, sampling every {neighbor_sample_step} neighbor")
-        
+        print(
+            f"Processing {len(remaining_topics)} remaining topics (already processed: {len(processed_topics)})"
+        )
+        print(
+            f"Fetching {max_neighbors_to_fetch} neighbors, sampling every {neighbor_sample_step} neighbor"
+        )
+
         for topic in tqdm(remaining_topics):
             # Search for more topics than needed
-            num_to_fetch = min(max_neighbors_to_fetch + 1, 1000)  # Cap at 1000 for safety
+            num_to_fetch = min(max_neighbors_to_fetch + 1,
+                               1000)  # Cap at 1000 for safety
             similar_docs = vectorstore.similarity_search(topic, k=num_to_fetch)
 
             # Get all neighboring topics (excluding the topic itself)
@@ -294,7 +310,7 @@ Please format your response as a bulleted list using "•" symbols.'''
                 if len(sampled_neighbors) >= k_neighbors:
                     break
                 sampled_neighbors.append(all_neighbors[i])
-            
+
             topic_to_neighbors[topic] = sampled_neighbors[:k_neighbors]
 
             # Save intermediate results
@@ -314,7 +330,8 @@ Please format your response as a bulleted list using "•" symbols.'''
             self,
             topic_to_neighbors: Dict[str, List[str]],
             cache_file: str = None,
-            use_local_model: bool = False) -> Dict[str, Dict[str, str]]:
+            use_local_model: bool = False,
+            use_local_wikipedia: bool = False) -> Dict[str, Dict[str, str]]:
         """Extract facts from Wikipedia articles for topics and their neighbors."""
         print("Extracting facts from Wikipedia articles...")
 
@@ -339,7 +356,22 @@ Please format your response as a bulleted list using "•" symbols.'''
             print(f"Using {self.llm_provider} API for fact extraction...")
 
         # Import Wikipedia access
-        import wikipedia
+        if use_local_wikipedia:
+            try:
+                from local_wikipedia_helper import LocalWikipediaHelper
+                if self.wiki_json_path:
+                    local_wiki = LocalWikipediaHelper(
+                        wiki_json_path=self.wiki_json_path)
+                else:
+                    local_wiki = LocalWikipediaHelper()
+                print("✅ Using local Wikipedia data")
+            except Exception as e:
+                print(f"❌ Failed to initialize local Wikipedia: {e}")
+                print("Falling back to online Wikipedia access")
+                use_local_wikipedia = False
+                import wikipedia
+        else:
+            import wikipedia
 
         # Check for temporary file to resume from
         temp_file = self.facts_dir / "wiki_facts_temp.json"
@@ -360,7 +392,9 @@ Please format your response as a bulleted list using "•" symbols.'''
 
         remaining_topics = [t for t in all_topics if t not in processed_topics]
 
-        print(f"Extracting facts for {len(remaining_topics)} remaining topics (already processed: {len(processed_topics)})")
+        print(
+            f"Extracting facts for {len(remaining_topics)} remaining topics (already processed: {len(processed_topics)})"
+        )
         for topic in tqdm(remaining_topics):
             # Skip unknown topics
             if topic.lower() in ["unknown topic", "unknown", ""]:
@@ -372,9 +406,37 @@ Please format your response as a bulleted list using "•" symbols.'''
                 continue
 
             try:
-                # Get Wikipedia page content
-                page = wikipedia.page(topic)
-                content = page.content[:3000]  # Limit content length
+                if use_local_wikipedia:
+                    # Use local Wikipedia
+                    article = local_wiki.get_article(topic)
+                    if article:
+                        content = article.get('text',
+                                              '')[:self.wiki_content_size]
+                        page_title = article.get('title', topic)
+                        page_url = f"https://en.wikipedia.org/wiki/{page_title.replace(' ', '_')}"
+                        print(
+                            f"  📁 LOCAL: Retrieved '{page_title}' for topic '{topic}'"
+                        )
+                    else:
+                        facts_dict[topic] = {
+                            'facts':
+                            f"Article not found in local Wikipedia: {topic}",
+                            'url': None,
+                            'title': topic
+                        }
+                        print(f"  ❌ LOCAL: Not found '{topic}'")
+                        continue
+                else:
+                    # Use online Wikipedia
+                    print(f"  🌐 API: Fetching '{topic}'...")
+                    page = wikipedia.page(topic)
+                    content = page.content[:self.
+                                           wiki_content_size]  # Limit content length
+                    page_title = page.title
+                    page_url = page.url
+                    print(
+                        f"  ✅ API: Retrieved '{page_title}' for topic '{topic}'"
+                    )
 
                 # HACK: print the content
                 # print(f"content is - {content}")
@@ -383,8 +445,8 @@ Please format your response as a bulleted list using "•" symbols.'''
                 if len(content) < 100:
                     facts_dict[topic] = {
                         'facts': f"No substantial content found for {topic}",
-                        'url': page.url,
-                        'title': page.title
+                        'url': page_url,
+                        'title': page_title
                     }
                     continue
 
@@ -399,40 +461,54 @@ Please format your response as a bulleted list using "•" symbols.'''
 
                 facts_dict[topic] = {
                     'facts': facts,
-                    'url': page.url,
-                    'title': page.title
+                    'url': page_url,
+                    'title': page_title
                 }
-            except wikipedia.exceptions.DisambiguationError as e:
-                # Try the first option
-                try:
-                    page = wikipedia.page(e.options[0])
-                    content = page.content[:3000]
-                    if use_local_model:
-                        facts = extract_bulleted_facts(content,
-                                                       model,
-                                                       tokenizer,
-                                                       max_new_tokens=350)
-                    else:
-                        facts = self._extract_facts_via_api(
-                            content, e.options[0])
-                    facts_dict[topic] = {
-                        'facts': facts,
-                        'url': page.url,
-                        'title': page.title
-                    }
-                except Exception:
+            except Exception as e:
+                if not use_local_wikipedia and hasattr(e, 'options'):
+                    # Handle disambiguation error for online Wikipedia
+                    try:
+                        print(
+                            f"  🔄 API: Disambiguation for '{topic}', trying '{e.options[0]}'..."
+                        )
+                        page = wikipedia.page(e.options[0])
+                        content = page.content[:self.wiki_content_size]
+                        page_title = page.title
+                        page_url = page.url
+                        print(
+                            f"  ✅ API: Retrieved '{page_title}' via disambiguation"
+                        )
+                        if use_local_model:
+                            facts = extract_bulleted_facts(content,
+                                                           model,
+                                                           tokenizer,
+                                                           max_new_tokens=350)
+                        else:
+                            facts = self._extract_facts_via_api(
+                                content, e.options[0])
+                        facts_dict[topic] = {
+                            'facts': facts,
+                            'url': page_url,
+                            'title': page_title
+                        }
+                    except Exception as e2:
+                        print(
+                            f"  ❌ API: Failed to retrieve '{topic}' even with disambiguation: {e2}"
+                        )
+                        facts_dict[topic] = {
+                            'facts': f"No facts available for {topic}",
+                            'url': None,
+                            'title': topic
+                        }
+                else:
+                    # Other errors or local Wikipedia not found
+                    source = "LOCAL" if use_local_wikipedia else "API"
+                    print(f"  ❌ {source}: Error processing '{topic}': {e}")
                     facts_dict[topic] = {
                         'facts': f"No facts available for {topic}",
                         'url': None,
                         'title': topic
                     }
-            except Exception as e:
-                print(f"Error processing {topic}: {e}")
-                facts_dict[topic] = {
-                    'facts': f"No facts available for {topic}",
-                    'url': None,
-                    'title': topic
-                }
 
             # Save intermediate results
             if len(facts_dict) % 5 == 0:
@@ -476,15 +552,20 @@ Please format your response as a bulleted list using "•" symbols.'''
             questions_per_topic_count = {}
             for q in all_questions:
                 topic = q['topic']
-                questions_per_topic_count[topic] = questions_per_topic_count.get(topic, 0) + 1
-            processed_topics = {topic for topic, count in questions_per_topic_count.items() 
-                              if count >= questions_per_topic}
+                questions_per_topic_count[
+                    topic] = questions_per_topic_count.get(topic, 0) + 1
+            processed_topics = {
+                topic
+                for topic, count in questions_per_topic_count.items()
+                if count >= questions_per_topic
+            }
         else:
             all_questions = []
             processed_topics = set()
             questions_per_topic_count = {}
 
-        remaining_topics = [(topic, fact_data) for topic, fact_data in facts_dict.items() 
+        remaining_topics = [(topic, fact_data)
+                            for topic, fact_data in facts_dict.items()
                             if topic not in processed_topics]
 
         print(
@@ -519,7 +600,9 @@ Format your response as a JSON list with this structure:
 Only return the JSON list, no other text."""
 
             try:
-                response = self.llm_function(prompt, model=self.question_model, temperature=0.7)
+                response = self.llm_function(prompt,
+                                             model=self.question_model,
+                                             temperature=0.7)
 
                 # Try to extract JSON from response
                 response = response.strip()
@@ -548,7 +631,7 @@ Only return the JSON list, no other text."""
 
         # Deduplicate questions before saving
         all_questions = self._validate_and_deduplicate_questions(all_questions)
-        
+
         # Save final results
         save_dict(all_questions, final_file)
 
@@ -559,7 +642,8 @@ Only return the JSON list, no other text."""
         print(f"Generated {len(all_questions)} questions total")
         return all_questions
 
-    def _organize_by_distance(self, topics_df, topic_to_neighbors, facts_dict, questions):
+    def _organize_by_distance(self, topics_df, topic_to_neighbors, facts_dict,
+                              questions):
         """Organize dataset by semantic distance from original topics."""
         # Group questions by topic
         questions_by_topic = {}
@@ -568,13 +652,13 @@ Only return the JSON list, no other text."""
             if topic not in questions_by_topic:
                 questions_by_topic[topic] = []
             questions_by_topic[topic].append(q)
-        
+
         # Get original topics
         original_topics = set(topics_df['topic'].unique())
-        
+
         # Organize topics by distance
         topics_list = []
-        
+
         # Distance 0: Original topics
         for topic in original_topics:
             if topic in questions_by_topic and topic in facts_dict:
@@ -586,7 +670,7 @@ Only return the JSON list, no other text."""
                     'wiki_url': facts_dict[topic].get('url', ''),
                     'questions': questions_by_topic[topic]
                 })
-        
+
         # Distance 1+: Neighbor topics
         for original_topic, neighbors in topic_to_neighbors.items():
             for i, neighbor_topic in enumerate(neighbors):
@@ -594,24 +678,31 @@ Only return the JSON list, no other text."""
                     # Skip if already added as distance 0
                     if neighbor_topic in original_topics:
                         continue
-                    
+
                     topics_list.append({
-                        'topic': neighbor_topic,
-                        'distance': i + 1,  # Distance based on neighbor rank
-                        'original_topic': original_topic,
-                        'facts': facts_dict[neighbor_topic].get('facts', ''),
-                        'wiki_url': facts_dict[neighbor_topic].get('url', ''),
-                        'questions': questions_by_topic[neighbor_topic]
+                        'topic':
+                        neighbor_topic,
+                        'distance':
+                        i + 1,  # Distance based on neighbor rank
+                        'original_topic':
+                        original_topic,
+                        'facts':
+                        facts_dict[neighbor_topic].get('facts', ''),
+                        'wiki_url':
+                        facts_dict[neighbor_topic].get('url', ''),
+                        'questions':
+                        questions_by_topic[neighbor_topic]
                     })
-        
+
         return topics_list
 
-    def _validate_and_deduplicate_questions(self, questions: List[Dict]) -> List[Dict]:
+    def _validate_and_deduplicate_questions(
+            self, questions: List[Dict]) -> List[Dict]:
         """Remove duplicate questions based on question text."""
         seen_questions = set()
         unique_questions = []
         duplicates = 0
-        
+
         for q in questions:
             q_text = q.get('question', '')
             if q_text and q_text not in seen_questions:
@@ -619,10 +710,10 @@ Only return the JSON list, no other text."""
                 unique_questions.append(q)
             else:
                 duplicates += 1
-        
+
         if duplicates > 0:
             print(f"Removed {duplicates} duplicate questions")
-        
+
         return unique_questions
 
     def build_dataset(self,
@@ -632,7 +723,8 @@ Only return the JSON list, no other text."""
                       neighbor_sample_step: int = 3,
                       questions_per_topic: int = 5,
                       use_cache: bool = False,
-                      use_local_model: bool = False):
+                      use_local_model: bool = False,
+                      use_local_wikipedia: bool = False):
         """Build complete ripple bench dataset from WMDP."""
 
         print(f"Building Ripple Bench dataset from WMDP")
@@ -671,7 +763,8 @@ Only return the JSON list, no other text."""
         facts_dict = self.extract_facts_from_topics(
             topic_to_neighbors,
             cache_file=cache_files.get('facts'),
-            use_local_model=use_local_model)
+            use_local_model=use_local_model,
+            use_local_wikipedia=use_local_wikipedia)
 
         # Step 5: Generate questions
         generated_questions = self.generate_questions_from_facts(
@@ -681,8 +774,7 @@ Only return the JSON list, no other text."""
 
         # Organize data by distance levels
         topics_by_distance = self._organize_by_distance(
-            topics_df, topic_to_neighbors, facts_dict, generated_questions
-        )
+            topics_df, topic_to_neighbors, facts_dict, generated_questions)
 
         # Create final dataset summary
         dataset_summary = {
@@ -740,10 +832,11 @@ def main():
                         type=int,
                         default=5,
                         help="Number of neighbor topics to retrieve")
-    parser.add_argument("--neighbor-sample-step",
-                        type=int,
-                        default=3,
-                        help="Sample every Nth neighbor from the first 300 (default: 3)")
+    parser.add_argument(
+        "--neighbor-sample-step",
+        type=int,
+        default=3,
+        help="Sample every Nth neighbor from the first 300 (default: 3)")
     parser.add_argument("--questions-per-topic",
                         type=int,
                         default=5,
@@ -763,6 +856,10 @@ def main():
         action="store_true",
         help="Use local Zephyr model for fact extraction instead of API calls")
     parser.add_argument(
+        "--use-local-wikipedia",
+        action="store_true",
+        help="Use local Wikipedia JSON data instead of online API")
+    parser.add_argument(
         "--use-timestamp",
         action="store_true",
         help="Use timestamp in output directories (default: False)")
@@ -778,6 +875,20 @@ def main():
         "--question-model",
         default="claude-4-sonnet",
         help="Model to use for question generation (default: claude-4-sonnet)")
+    parser.add_argument(
+        "--wiki-content-size",
+        type=int,
+        default=6000,
+        help=
+        "Maximum characters to extract from Wikipedia articles (default: 6000)"
+    )
+    parser.add_argument(
+        "--wiki-json-path",
+        type=str,
+        default=None,
+        help=
+        "Path to Wikipedia JSON directory for local access (default: /Users/roy/data/wikipedia/wikipedia/json)"
+    )
 
     args = parser.parse_args()
 
@@ -787,13 +898,24 @@ def main():
                                  use_timestamp=args.use_timestamp,
                                  topic_model=args.topic_model,
                                  fact_model=args.fact_model,
-                                 question_model=args.question_model)
+                                 question_model=args.question_model,
+                                 wiki_content_size=args.wiki_content_size,
+                                 wiki_json_path=args.wiki_json_path)
     print(f"Using LLM provider: {args.llm_provider}")
     print(f"Models:")
     print(f"  - Topic extraction: {args.topic_model}")
-    print(f"  - Fact extraction: {args.fact_model} {'(local Zephyr)' if args.use_local_model else ''}")
+    print(
+        f"  - Fact extraction: {args.fact_model} {'(local Zephyr)' if args.use_local_model else ''}"
+    )
     print(f"  - Question generation: {args.question_model}")
-    print(f"Neighbor sampling: {args.k_neighbors} neighbors from every {args.neighbor_sample_step}th position (out of first 300)")
+    if args.use_local_wikipedia:
+        wiki_path_msg = f"Local JSON files{f' at {args.wiki_json_path}' if args.wiki_json_path else ''}"
+        print(f"Wikipedia source: {wiki_path_msg}")
+    else:
+        print(f"Wikipedia source: Online API")
+    print(
+        f"Neighbor sampling: {args.k_neighbors} neighbors from every {args.neighbor_sample_step}th position (out of first 300)"
+    )
 
     dataset = builder.build_dataset(
         wmdp_path=args.wmdp_path,
@@ -802,7 +924,8 @@ def main():
         neighbor_sample_step=args.neighbor_sample_step,
         questions_per_topic=args.questions_per_topic,
         use_cache=args.use_cache,
-        use_local_model=args.use_local_model)
+        use_local_model=args.use_local_model,
+        use_local_wikipedia=args.use_local_wikipedia)
 
 
 if __name__ == "__main__":
