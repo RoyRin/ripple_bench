@@ -110,25 +110,67 @@ To download a previously uploaded Ripple Bench dataset:
 python scripts/download_ripple_bench.py 
 ```
 
-The downloaded dataset will be ready for use with `evaluate_ripple_bench.py`.
+The downloaded dataset will be ready for evaluation using the scripts described below.
 
-### Evaluation
+## Model Evaluation
 
+### Evaluating Models on Ripple Bench
 
-### Evaluate Models
+The evaluation process is split into two steps for flexibility:
+
+#### Step 1: Evaluate Individual Models
+
+First, evaluate each model separately to generate CSV results:
 
 ```bash
-python scripts/evaluate_ripple_bench.py \
-    ripple_bench_datasets/ripple_bench_dataset_*.json \
-    --base-model /path/to/base/model \
-    --unlearned-model /path/to/unlearned/model \
-    --output-dir evaluation_results
+# Evaluate base model (e.g., zephyr-7b-beta)
+python scripts/evaluate_model_on_ripple.py \
+    data/ripple_bench_dataset.json \
+    HuggingFaceH4/zephyr-7b-beta \
+    --output-csv results/zephyr_base.csv
+
+# Evaluate unlearned model (e.g., ELM unlearned zephyr)
+python scripts/evaluate_model_on_ripple.py \
+    data/ripple_bench_dataset.json \
+    baulab/elm-zephyr-7b-beta \
+    --output-csv results/zephyr_elm.csv
+```
+
+This script:
+- Accepts any HuggingFace model ID or local model path
+- Outputs a CSV with question-by-question results
+- Generates a summary JSON with overall accuracy
+
+#### Step 2: Analyze and Compare Results
+
+Compare two model evaluation results:
+
+```bash
+# Basic comparison (without ripple effect analysis)
+python scripts/analyze_ripple_results.py \
+    results/zephyr_base.csv \
+    results/zephyr_elm.csv \
+    --output-dir analysis_results
+
+# With ripple effect analysis (recommended)
+python scripts/analyze_ripple_results.py \
+    results/zephyr_base.csv \
+    results/zephyr_elm.csv \
+    --output-dir analysis_results \
+    --dataset data/ripple_bench_dataset.json
 ```
 
 This produces:
-- Accuracy comparisons between base and unlearned models
-- Ripple effect visualizations showing performance vs. topic distance
-- Detailed analysis reports
+- **Accuracy comparison** bar charts
+- **Performance change distribution** (degraded/unchanged/improved)
+- **Topic-wise performance** differences
+- **Ripple effect visualization** showing accuracy vs. semantic distance (if dataset provided)
+- **Detailed markdown report** with analysis and examples
+
+The ripple effect analysis shows:
+- Distance 0: Performance on original WMDP topics (directly unlearned)
+- Distance 1+: Performance on progressively less related topics
+- This reveals how unlearning "ripples out" from target topics
 
 
 ## Configuration
@@ -159,11 +201,12 @@ ripple_bench/           # Core library code
 
 scripts/                # Executable scripts
 ├── build_ripple_bench_from_wmdp.py  # Dataset creation
-├── evaluate_ripple_bench.py         # Model evaluation
+├── evaluate_model_on_ripple.py      # Evaluate single model on dataset
+├── analyze_ripple_results.py        # Compare two model evaluations
 ├── upload_ripple_bench_to_hf.py     # Upload dataset to Hugging Face
 ├── download_ripple_bench.py         # Download dataset from Hugging Face
 ├── check_anthropic_spending.py      # Check API usage costs
-├── test_wiki_rag.py                 # Test WikiRAG setup
+├── local_wikipedia_helper.py        # Helper for local Wikipedia access
 ├── setup_wiki_rag.py                # Download wiki-rag FAISS index
 ├── setup_wikipedia_dataset.py       # Download Wikipedia dataset
 ├── download_wmdp.sh                 # Download WMDP dataset
