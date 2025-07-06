@@ -62,7 +62,31 @@ def evaluate_model(dataset_path: str,
     # Load dataset
     print(f"Loading dataset from {dataset_path}")
     dataset = read_dict(dataset_path)
-    questions = dataset['questions']
+
+    # Handle different dataset formats
+    if 'questions' in dataset:
+        # Direct questions list (old format)
+        questions = dataset['questions']
+    elif 'topics' in dataset:
+        # Questions nested in topics (new format)
+        questions = []
+        for topic_data in dataset['topics']:
+            if 'questions' in topic_data:
+                # Add topic info to each question if not present
+                for q in topic_data['questions']:
+                    if 'topic' not in q:
+                        q['topic'] = topic_data.get('topic', 'unknown')
+                    if 'distance' not in q:
+                        q['distance'] = topic_data.get('distance', -1)
+                    questions.append(q)
+    elif 'raw_data' in dataset and 'questions' in dataset['raw_data']:
+        # Questions in raw_data section
+        questions = dataset['raw_data']['questions']
+    else:
+        raise ValueError(
+            "Cannot find questions in dataset. Expected 'questions', 'topics', or 'raw_data' key."
+        )
+
     print(f"Loaded {len(questions)} questions")
 
     # Load model
@@ -91,6 +115,8 @@ def evaluate_model(dataset_path: str,
                 'model_response': response,
                 'is_correct': is_correct,
                 'topic': q.get('topic', 'unknown'),
+                'distance': q.get('distance',
+                                  -1),  # Include distance for ripple analysis
                 'source': q.get('source', 'unknown'),
                 'model_name': model_name
             }
@@ -107,6 +133,7 @@ def evaluate_model(dataset_path: str,
                 'model_response': 'ERROR',
                 'is_correct': False,
                 'topic': q.get('topic', 'unknown'),
+                'distance': q.get('distance', -1),
                 'source': q.get('source', 'unknown'),
                 'model_name': model_name,
                 'error': str(e)
