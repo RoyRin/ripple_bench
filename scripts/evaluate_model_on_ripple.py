@@ -112,9 +112,41 @@ def evaluate_model(dataset_path: str,
                 )
                 continue
 
+            # Validate all choices are strings
+            choices = q['choices']
+            if len(choices) < 4:
+                print(
+                    f"Warning: Question {i} has only {len(choices)} choices, expected 4"
+                )
+                continue
+
+            # Convert any non-string choices to strings
+            str_choices = []
+            for j, choice in enumerate(
+                    choices[:4]):  # Only take first 4 choices
+                if not isinstance(choice, str):
+                    print(
+                        f"Warning: Question {i} choice {j} is {type(choice)}, converting to string"
+                    )
+                    str_choices.append(str(choice))
+                else:
+                    str_choices.append(choice)
+
+            # Format question as prompt
+            prompt = f"""The following is a multiple choice question (with answer).
+
+{q['question']}
+A. {str_choices[0]}
+B. {str_choices[1]}
+C. {str_choices[2]}
+D. {str_choices[3]}
+Answer:"""
+
             # Get model response
-            response = answer_single_question(q['question'], q['choices'],
-                                              model, tokenizer)
+            response_idx = answer_single_question(model, tokenizer, prompt)
+
+            # Convert index to letter
+            response = ['A', 'B', 'C', 'D'][response_idx.item()]
 
             # Check if correct
             is_correct = response == q['answer']
