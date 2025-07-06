@@ -26,6 +26,5 @@ notebooks/wmdp/*.json
 # API spending logs
 SPEND/
 
-
-
-
+# Claude.md file
+CLAUDE.md
