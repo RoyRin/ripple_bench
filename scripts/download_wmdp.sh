@@ -21,11 +21,8 @@ DATA_DIR="${1:-data/wmdp}"
 echo -e "${YELLOW}WMDP Dataset Downloader${NC}"
 echo "========================"
 echo ""
-echo -e "${RED}IMPORTANT NOTICES:${NC}"
-echo "1. This dataset requires access permission from CAIS"
-echo "2. Request access at: https://huggingface.co/datasets/cais/wmdp"
-echo "3. You must be logged in to Hugging Face with approved access"
-echo "4. DO NOT commit this data to any git repository!"
+echo -e "${RED}IMPORTANT NOTICE:${NC}"
+echo "DO NOT commit this data to any git repository!"
 echo ""
 
 # Check if user is logged into Hugging Face
@@ -58,10 +55,10 @@ mkdir -p "$DATA_DIR"
 # Download using Python script
 echo -e "\n${YELLOW}Downloading WMDP dataset...${NC}"
 
-python3 << 'EOF'
+python3 - "$DATA_DIR" << 'EOF'
 import os
 import sys
-from datasets import load_dataset
+from datasets import load_dataset, get_dataset_config_names
 from pathlib import Path
 
 data_dir = sys.argv[1]
@@ -71,15 +68,14 @@ try:
     print("This may take a while...")
     
     # Load the dataset
-    dataset = load_dataset("cais/wmdp", trust_remote_code=True)
-    
-    # Save each split
-    for split_name, split_data in dataset.items():
-        output_file = Path(data_dir) / f"wmdp-{split_name}.json"
+    for split_name in get_dataset_config_names("cais/wmdp"):
+        dataset = load_dataset("cais/wmdp", split_name)
+
+        output_file = Path(data_dir) / f"{split_name}.json"
         print(f"Saving {split_name} split to {output_file}")
         
         # Convert to list of dicts
-        data = split_data.to_list()
+        data = dataset["test"].to_list()
         
         # Save as JSON
         import json
@@ -87,16 +83,14 @@ try:
             json.dump(data, f, indent=2)
         
         print(f"  ✓ Saved {len(data)} questions")
-    
+
     print("\nDataset downloaded successfully!")
     
 except Exception as e:
     print(f"Error downloading dataset: {e}")
-    print("\nMake sure you have access to the WMDP dataset.")
-    print("Request access at: https://huggingface.co/datasets/cais/wmdp")
     sys.exit(1)
 
-EOF "$DATA_DIR"
+EOF
 
 if [ $? -eq 0 ]; then
     echo -e "\n${GREEN}✓ Download complete!${NC}"
