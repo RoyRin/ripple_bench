@@ -74,7 +74,7 @@ The WMDP (Weapons of Mass Destruction Proxy) dataset requires access permission:
 
 ```bash
 python scripts/build_ripple_bench_from_wmdp.py \
-    --wmdp-path notebooks/wmdp/wmdp-bio.json \
+    --wmdp-path data/wmdp/wmdp-bio.json \
     --num-samples 50 \
     --k-neighbors 5 \
     --questions-per-topic 5 \

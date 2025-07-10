@@ -3,18 +3,18 @@
 # extract facts
 # save the facts
 
-import pandas as pd
-from pathlib import Path
-from wiki_rag import wikipedia as rag_wikipedia
-from wiki_rag import rag
-
-from langchain.vectorstores import FAISS
-from pathlib import Path
-import wikipedia
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
 import datetime
+import os
+from pathlib import Path
+
+import pandas as pd
+import torch
+import wikipedia
 from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.vectorstores import FAISS
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from wiki_rag import wikipedia as rag_wikipedia
+
 from ripple_bench.generate_ripple_questions import extract_bulleted_facts
 
 
@@ -31,7 +31,6 @@ class PromptedBGE(HuggingFaceEmbeddings):
 BAAI_embedding = PromptedBGE(model_name="BAAI/bge-base-en")  # or bge-large-en
 
 # Check for environment variable or use default
-import os
 DEFAULT_FAISS_PATH = "/Users/roy/data/wikipedia/hugging_face/faiss_index__top_1000000__2025-04-11"
 faiss_base_path = os.environ.get('WIKI_FAISS_PATH', DEFAULT_FAISS_PATH)
 

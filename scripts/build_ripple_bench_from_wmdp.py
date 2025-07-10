@@ -17,7 +17,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Tuple
 from tqdm import tqdm
 import concurrent.futures
 from functools import partial
@@ -28,7 +28,7 @@ from ripple_bench.anthropic_utils import anthropic_function
 from ripple_bench.utils import save_dict, read_dict
 from ripple_bench.models import load_zephyr
 
-from ripple_bench.construct_ripple_bench_structure import get_RAG, PromptedBGE
+from ripple_bench.construct_ripple_bench_structure import get_RAG
 from ripple_bench.extract_topics_and_neighbors import PromptedBGE
 
 
