@@ -11,7 +11,7 @@ fi
 
 # Create new virtual environment with Python 3.10
 echo "Creating new virtual environment with Python 3.10..."
-uv venv --python 3.10
+uv venv --python 3.10 venv
 
 # Activate the virtual environment
 echo "Activating virtual environment..."

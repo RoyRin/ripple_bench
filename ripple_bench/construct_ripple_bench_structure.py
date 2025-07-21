@@ -3,18 +3,18 @@
 # extract facts
 # save the facts
 
-import pandas as pd
-from pathlib import Path
-from wiki_rag import wikipedia as rag_wikipedia
-from wiki_rag import rag
-
-from langchain.vectorstores import FAISS
-from pathlib import Path
-import wikipedia
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
 import datetime
+import os
+from pathlib import Path
+
+import pandas as pd
+import torch
+import wikipedia
 from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.vectorstores import FAISS
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from wiki_rag import wikipedia as rag_wikipedia
+
 from ripple_bench.generate_ripple_questions import extract_bulleted_facts
 
 
@@ -28,47 +28,49 @@ class PromptedBGE(HuggingFaceEmbeddings):
         return super().embed_query(
             f"Represent this query for retrieval: {text}")
 
+
 BAAI_embedding = PromptedBGE(model_name="BAAI/bge-base-en")  # or bge-large-en
 
 # Check for environment variable or use default
-import os
 DEFAULT_FAISS_PATH = "/Users/roy/data/wikipedia/hugging_face/faiss_index__top_1000000__2025-04-11"
 faiss_base_path = os.environ.get('WIKI_FAISS_PATH', DEFAULT_FAISS_PATH)
 
-data_cache = Path(faiss_base_path).parent.parent  # Go up two levels to get wikipedia base
+data_cache = Path(
+    faiss_base_path).parent.parent  # Go up two levels to get wikipedia base
 json_dir = data_cache / 'json'
 
 
-def get_RAG(faiss_path = None):
+def get_RAG(faiss_path=None):
     if faiss_path is None:
         faiss_path = Path(faiss_base_path)
-    
+
     print(f"loading vectorstore from {faiss_path}")
-    
+
     # Check if the path exists
     if not faiss_path.exists():
-        raise FileNotFoundError(f"FAISS index not found at {faiss_path}. "
-                              f"Please set WIKI_FAISS_PATH environment variable or "
-                              f"ensure the index exists at {DEFAULT_FAISS_PATH}")
-    
+        raise FileNotFoundError(
+            f"FAISS index not found at {faiss_path}. "
+            f"Please set WIKI_FAISS_PATH environment variable or "
+            f"ensure the index exists at {DEFAULT_FAISS_PATH}")
+
     vectorstore = FAISS.load_local(
         str(faiss_path),
         BAAI_embedding,
         allow_dangerous_deserialization=
         True  # <-- set this only if you created the file
     )
-    
+
     # Look for assets in the wiki-rag directory relative to current file
     current_dir = Path(__file__).parent.parent
     asset_dir = current_dir / "wiki-rag" / "assets"
-    
+
     # If not found, check in the faiss path directory
     if not asset_dir.exists():
         asset_dir = faiss_path.parent / "assets"
-    
+
     title_to_file_path_f = asset_dir / 'title_to_file_path.json'
-    title_to_file_path_f_pkl = asset_dir / 'title_to_file_path.pkl'    
-    
+    title_to_file_path_f_pkl = asset_dir / 'title_to_file_path.pkl'
+
     # Check if pickle file exists, otherwise use json
     if title_to_file_path_f_pkl.exists():
         print(f"loading wiki index from {title_to_file_path_f_pkl}")
@@ -88,11 +90,16 @@ def get_RAG(faiss_path = None):
             with open(index_file, 'rb') as f:
                 title_to_file_path = pickle.load(f)
         else:
-            raise FileNotFoundError(f"Could not find title_to_file_path index in {asset_dir} or {faiss_path}")
+            raise FileNotFoundError(
+                f"Could not find title_to_file_path index in {asset_dir} or {faiss_path}"
+            )
 
     return vectorstore, title_to_file_path
 
-def get_summarizing_model(model_id = 'HuggingFaceH4/zephyr-7b-beta', device = 'cuda:0', dtype = torch.float32):
+
+def get_summarizing_model(model_id='HuggingFaceH4/zephyr-7b-beta',
+                          device='cuda:0',
+                          dtype=torch.float32):
     ##
     # load model for summarizing
     ##
@@ -132,8 +139,8 @@ def warm_start(safe_dual_use_facts_path):
         topics_seen = set(dual_use_facts_df['subject'].unique())
         print(f"Topics seen: {topics_seen}")
         print(f"{len(topics_seen)} unique topics seen")
-        return dual_use_facts_dataset, topics_seen 
-    
+        return dual_use_facts_dataset, topics_seen
+
 
 from ripple_bench import CACHE_DIR
 
@@ -159,19 +166,21 @@ if __name__ == "__main__":
     ##
     # load model for summarizing
     ##
-    summarizing_model, tokenizer = get_summarizing_model(model_id= 'HuggingFaceH4/zephyr-7b-beta')
-    
+    summarizing_model, tokenizer = get_summarizing_model(
+        model_id='HuggingFaceH4/zephyr-7b-beta')
+
     # HACK - hardcode location
     # Good to Go!
 
     num_docs_per_subject = 1
     # check if dataset already loaded
 
-    dual_use_facts_dataset, topics_seen = warm_start(safe_dual_use_facts_path=safe_dual_use_facts_path)
+    dual_use_facts_dataset, topics_seen = warm_start(
+        safe_dual_use_facts_path=safe_dual_use_facts_path)
 
     #
     for i, row in dual_use_df.iterrows():
-        
+
         safe_topic = row['subject']
         print(f"Processing subject: {safe_topic}")
         query = f"What is {safe_topic}"

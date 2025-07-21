@@ -16,6 +16,7 @@ dependencies = [
     "numpy>=2.2.0",
     "torch>=2.5.1",
     "torchvision>=0.20.1",
+    "datasets>=4.0.0",
     "transformers[torch]>=4.47.1",
     "accelerate>=1.2.1",
     "evaluate>=0.4.3",
