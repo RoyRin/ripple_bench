@@ -19,6 +19,20 @@ from datetime import datetime
 import json
 from ripple_bench.utils import read_dict
 
+# Configure matplotlib styling
+plt.rcParams.update({
+    "pgf.texsystem": "pdflatex",
+    'font.family': 'serif',
+    'font.size': 15,  # Set font size to 11pt
+    'axes.labelsize': 15,  # -> axis labels
+    'xtick.labelsize': 12,
+    'ytick.labelsize': 12,
+    'legend.fontsize': 12,
+    'lines.linewidth': 2,
+    'text.usetex': False,
+    'pgf.rcfonts': False,
+})
+
 
 def load_results(csv_path: str) -> pd.DataFrame:
     """Load evaluation results from CSV."""
@@ -210,8 +224,9 @@ def create_visualizations(analysis: dict,
                           facecolor='yellow',
                           alpha=0.7))
 
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0.03, 1, 0.85])
     plt.savefig(output_dir / f"accuracy_comparison_{timestamp}.png", dpi=150)
+    plt.savefig(output_dir / f"accuracy_comparison_{timestamp}.pdf")
     plt.close()
 
     # 2. Change Distribution
@@ -248,8 +263,9 @@ def create_visualizations(analysis: dict,
             textprops={'fontsize': 11})
     ax2.set_title('Performance Change Distribution', fontsize=14)
 
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0.03, 1, 0.85])
     plt.savefig(output_dir / f"change_distribution_{timestamp}.png", dpi=150)
+    plt.savefig(output_dir / f"change_distribution_{timestamp}.pdf")
     plt.close()
 
     # 3. Topic-wise Performance Difference
@@ -286,8 +302,9 @@ def create_visualizations(analysis: dict,
                     va='center',
                     fontsize=9)
 
-        plt.tight_layout()
+        plt.tight_layout(rect=[0, 0.03, 1, 0.85])
         plt.savefig(output_dir / f"topic_differences_{timestamp}.png", dpi=150)
+        plt.savefig(output_dir / f"topic_differences_{timestamp}.pdf")
         plt.close()
 
     # 4. Accuracy Scatter Plot by Topic
@@ -319,8 +336,9 @@ def create_visualizations(analysis: dict,
         cbar = plt.colorbar(scatter, ax=ax)
         cbar.set_label('Accuracy Difference', rotation=270, labelpad=20)
 
-        plt.tight_layout()
+        plt.tight_layout(rect=[0, 0.03, 1, 0.85])
         plt.savefig(output_dir / f"topic_scatter_{timestamp}.png", dpi=150)
+        plt.savefig(output_dir / f"topic_scatter_{timestamp}.pdf")
         plt.close()
 
     # 5. Ripple Effect Visualization (if available)
@@ -377,8 +395,9 @@ def create_visualizations(analysis: dict,
         ax.set_xticks(distances)
         ax.set_ylim(0, max(max(base_accs), max(comp_accs)) * 1.1)
 
-        plt.tight_layout()
+        plt.tight_layout(rect=[0, 0.03, 1, 0.85])
         plt.savefig(output_dir / f"ripple_effect_{timestamp}.png", dpi=150)
+        plt.savefig(output_dir / f"ripple_effect_{timestamp}.pdf")
         plt.close()
 
     print(f"Visualizations saved to {output_dir}")
