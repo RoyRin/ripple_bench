@@ -1152,6 +1152,12 @@ def main():
         type=int,
         default=3,
         help="Sample every Nth neighbor from the first 300 (default: 3)")
+    parser.add_argument(
+        "--faiss-path",
+        type=str,
+        default=None,
+        help="Path to FAISS index directory (overrides WIKI_FAISS_PATH env var)"
+    )
     parser.add_argument("--questions-per-topic",
                         type=int,
                         default=5,
@@ -1213,6 +1219,12 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # Set WIKI_FAISS_PATH if faiss_path is provided
+    if args.faiss_path:
+        import os
+        os.environ['WIKI_FAISS_PATH'] = args.faiss_path
+        print(f"Using FAISS index from: {args.faiss_path}")
 
     # Create builder and run
     builder = RippleBenchBuilder(output_dir=args.output_dir,
