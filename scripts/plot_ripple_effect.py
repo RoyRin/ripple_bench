@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 import json
+from datetime import datetime
 from ripple_bench.utils import read_dict
 
 # Configure matplotlib styling
@@ -165,9 +166,14 @@ def plot_ripple_effect(base_csv,
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.85])
 
+    # Get date string for filenames
+    date_str = datetime.now().strftime("%Y%m%d")
+
     # Save plot in both PNG and PDF formats
-    output_path_png = Path(output_dir) / 'ripple_effect_comparison.png'
-    output_path_pdf = Path(output_dir) / 'ripple_effect_comparison.pdf'
+    output_path_png = Path(
+        output_dir) / f'ripple_effect_comparison_{date_str}.png'
+    output_path_pdf = Path(
+        output_dir) / f'ripple_effect_comparison_{date_str}.pdf'
     plt.savefig(output_path_png, dpi=300, bbox_inches='tight')
     plt.savefig(output_path_pdf, bbox_inches='tight')
     print(f"\nPlots saved to:")
@@ -222,9 +228,9 @@ def plot_ripple_effect(base_csv,
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.85])
     output_path_zoom_png = Path(
-        output_dir) / 'ripple_effect_comparison_zoom.png'
+        output_dir) / f'ripple_effect_comparison_zoom_{date_str}.png'
     output_path_zoom_pdf = Path(
-        output_dir) / 'ripple_effect_comparison_zoom.pdf'
+        output_dir) / f'ripple_effect_comparison_zoom_{date_str}.pdf'
     plt.savefig(output_path_zoom_png, dpi=300, bbox_inches='tight')
     plt.savefig(output_path_zoom_pdf, bbox_inches='tight')
     print(f"Zoomed plots saved to:")

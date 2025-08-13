@@ -1,4 +1,6 @@
+data
 results
+
 data_to_concept_unlearning.egg-info
 *.pth
 *pkl
@@ -6,7 +8,6 @@ data_to_concept_unlearning.egg-info
 *yaml
 __pycache__
 SECRETS
-data
 .DS_Store
 wandb
 
