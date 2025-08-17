@@ -4,7 +4,7 @@
 #SBATCH --partition=kempner_h100
 #SBATCH --mem=80G
 #SBATCH --gres=gpu:1
-#SBATCH -t 0-8:00
+#SBATCH -t 0-38:00
 #SBATCH -c 1
 #SBATCH --output=/n/home04/rrinberg/catered_out/ripple_bench/evaluate-ripple-%A__%a.out
 #SBATCH --mail-user=royrinberg@gmail.com  
@@ -20,12 +20,14 @@ mamba activate unlearning_3.10
 
 
 ## logging
-DATA_DIR=/n/home04/rrinberg/code/data_to_concept_unlearning
+CODE_DIR=/n/home04/rrinberg/code/data_to_concept_unlearning
 
 ## Run the experiment
-cd $DATA_DIR
+cd $CODE_DIR
+python scripts/evaluate_multiple_models.py data/ripple_bench_2025-07-12_full/ripple_bench_dataset.json --output-dir results/multiple_models/  --all-checkpoints
 
-./evaluate_models_on_ripple.sh
+
+#./evaluate_models_on_ripple.sh
 
 
 
