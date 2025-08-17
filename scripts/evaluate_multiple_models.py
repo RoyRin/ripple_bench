@@ -24,6 +24,12 @@ import os
 from ripple_bench.metrics import answer_single_question
 from ripple_bench.utils import read_dict
 
+# Set default HuggingFace cache directory via environment variables
+DEFAULT_CACHE_DIR = "/n/home04/rrinberg/data_dir/HF_cache"
+os.environ['HF_HOME'] = DEFAULT_CACHE_DIR
+os.environ['HUGGINGFACE_HUB_CACHE'] = DEFAULT_CACHE_DIR
+os.environ['TRANSFORMERS_CACHE'] = DEFAULT_CACHE_DIR
+
 # Model configurations
 MODELS = {
     # Base models (keep these in memory)
@@ -132,7 +138,7 @@ def delete_model_from_cache(model_id: str, cache_dir: str = None):
     """Delete a model from the HuggingFace cache to save space."""
     if cache_dir is None:
         # Use our default cache location
-        cache_dir = "/n/home04/rrinberg/data_dir/HF_cache"
+        cache_dir = DEFAULT_CACHE_DIR
 
     # Convert model_id to cache folder name format
     model_cache_name = f"models--{model_id.replace('/', '--')}"
@@ -325,9 +331,9 @@ def main():
                         help="Output directory for results")
     parser.add_argument(
         "--cache-dir",
-        default="/n/home04/rrinberg/data_dir/HF_cache",
+        default=DEFAULT_CACHE_DIR,
         help=
-        "Cache directory for HuggingFace models (default: /n/home04/rrinberg/data_dir/HF_cache)"
+        f"Cache directory for HuggingFace models (default: {DEFAULT_CACHE_DIR})"
     )
     parser.add_argument("--models",
                         nargs='+',
