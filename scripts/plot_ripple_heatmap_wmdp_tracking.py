@@ -237,6 +237,132 @@ def plot_wmdp_tracking_heatmap(base_csv,
 
         plt.close()
 
+        # Create SORTED version - sort by average ripple effect
+        print(f"\nCreating sorted heatmap for {label}...")
+
+        # Calculate mean effect for each topic (ignoring NaNs)
+        mean_effects = np.nanmean(matrix, axis=1)
+
+        # Sort indices by mean effect (descending - biggest effect first)
+        sorted_indices = np.argsort(-mean_effects)
+
+        # Reorder matrix and labels
+        sorted_matrix = matrix[sorted_indices]
+        sorted_labels = [topic_labels[i] for i in sorted_indices]
+
+        # Create sorted heatmap figure
+        fig, ax = plt.subplots(figsize=(20, max(10,
+                                                len(sorted_labels) * 0.15)))
+
+        # Plot sorted heatmap
+        im = ax.imshow(sorted_matrix,
+                       cmap=cmap,
+                       aspect='auto',
+                       vmin=-1,
+                       vmax=1)
+
+        # Set ticks
+        ax.set_xticks(np.arange(0, max_distance + 1, 10))
+        ax.set_xticklabels(range(0, max_distance + 1, 10))
+        ax.set_yticks(np.arange(len(sorted_labels)))
+        ax.set_yticklabels(sorted_labels)
+
+        # Labels
+        ax.set_xlabel('Distance from Original WMDP Topic', fontsize=12)
+        ax.set_ylabel('WMDP Topics (sorted by avg ripple effect)', fontsize=12)
+        ax.set_title(
+            f'Ripple Effect Tracking (Sorted) - {label}\nTopics sorted by average accuracy drop across all distances',
+            fontsize=14,
+            fontweight='bold')
+
+        # Add colorbar
+        cbar = plt.colorbar(im, ax=ax)
+        cbar.set_label('Accuracy Delta (Base - Unlearned)', fontsize=11)
+
+        # Add vertical line at distance 0
+        ax.axvline(x=0.5,
+                   color='white',
+                   linewidth=1,
+                   linestyle='--',
+                   alpha=0.7)
+
+        plt.tight_layout()
+
+        # Save sorted version
+        output_png_sorted = output_dir / f'ripple_heatmap_wmdp_tracking_{model_suffix}_sorted_{date_str}.png'
+        output_pdf_sorted = output_dir / f'ripple_heatmap_wmdp_tracking_{model_suffix}_sorted_{date_str}.pdf'
+
+        plt.savefig(output_png_sorted, dpi=150, bbox_inches='tight')
+        plt.savefig(output_pdf_sorted, bbox_inches='tight')
+        print(f"Saved sorted tracking heatmap for {label}:")
+        print(f"  PNG: {output_png_sorted}")
+        print(f"  PDF: {output_pdf_sorted}")
+
+        plt.close()
+
+        # Also create sorted focused version (distances 0-20)
+        fig, ax = plt.subplots(figsize=(12, max(10,
+                                                len(sorted_labels) * 0.15)))
+
+        # Plot sorted focused version
+        im = ax.imshow(sorted_matrix[:, :21],
+                       cmap=cmap,
+                       aspect='auto',
+                       vmin=-1,
+                       vmax=1)
+
+        # Set ticks
+        ax.set_xticks(np.arange(21))
+        ax.set_xticklabels(range(21))
+        ax.set_yticks(np.arange(len(sorted_labels)))
+        ax.set_yticklabels(sorted_labels)
+
+        # Labels
+        ax.set_xlabel('Distance from Original WMDP Topic', fontsize=12)
+        ax.set_ylabel('WMDP Topics (sorted by avg ripple effect)', fontsize=12)
+        ax.set_title(
+            f'Ripple Effect Tracking (Sorted & Focused) - {label}\nDistances 0-20, sorted by effect strength',
+            fontsize=14,
+            fontweight='bold')
+
+        # Add colorbar
+        cbar = plt.colorbar(im, ax=ax)
+        cbar.set_label('Accuracy Delta (Base - Unlearned)', fontsize=11)
+
+        # Add vertical line at distance 0
+        ax.axvline(x=0.5,
+                   color='white',
+                   linewidth=1,
+                   linestyle='--',
+                   alpha=0.7)
+
+        plt.tight_layout()
+
+        # Save sorted focused version
+        output_png_sorted_focused = output_dir / f'ripple_heatmap_wmdp_tracking_{model_suffix}_sorted_focused_{date_str}.png'
+        output_pdf_sorted_focused = output_dir / f'ripple_heatmap_wmdp_tracking_{model_suffix}_sorted_focused_{date_str}.pdf'
+
+        plt.savefig(output_png_sorted_focused, dpi=150, bbox_inches='tight')
+        plt.savefig(output_pdf_sorted_focused, bbox_inches='tight')
+        print(f"Saved sorted focused tracking heatmap for {label}:")
+        print(f"  PNG: {output_png_sorted_focused}")
+        print(f"  PDF: {output_pdf_sorted_focused}")
+
+        plt.close()
+
+        # Print top and bottom topics by effect
+        print(f"\nTop 5 topics with strongest ripple effect:")
+        for i in range(min(5, len(sorted_indices))):
+            idx = sorted_indices[i]
+            print(
+                f"  {topic_labels[idx]}: avg delta = {mean_effects[idx]:.3f}")
+
+        print(f"\nBottom 5 topics with weakest ripple effect:")
+        for i in range(max(0, len(sorted_indices) - 5), len(sorted_indices)):
+            idx = sorted_indices[i]
+            print(
+                f"  {topic_labels[idx]}: avg delta = {mean_effects[idx]:.3f}")
+
         # Print summary statistics
         print(f"\nSummary for {label}:")
         print(f"  WMDP topics included: {len(topic_labels)}")
