@@ -18,6 +18,7 @@ from datasets import Dataset, DatasetDict
 from huggingface_hub import HfApi, create_repo
 
 
+
 def load_ripple_bench_data(json_path: str) -> Dict[str, Any]:
     """Load Ripple Bench dataset from JSON file."""
     print(f"Loading dataset from: {json_path}")
@@ -44,11 +45,32 @@ def load_ripple_bench_data(json_path: str) -> Dict[str, Any]:
 def convert_to_hf_format(data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Convert Ripple Bench format to flat format for Hugging Face datasets."""
     rows = []
+
+    all_topics = {}
+
+    for topic_dict in data['topics']:
+        topic_name = topic_dict['topic']
+        og_topic = topic_dict["original_topic"]
+        og_distance = topic_dict["distance"]
+
+        og_topic_dict = {
+            "topic": og_topic, 
+            "distance": og_distance,
+        }
+
+        if topic_name in all_topics:
+            all_topics[topic_name]["original_topics"].append(og_topic_dict)
+        else:
+            topic_dict = topic_dict.copy()
+            topic_dict.pop("original_topic")
+            topic_dict.pop("distance")
+            topic_dict["original_topics"] = [og_topic_dict]
+            
+            all_topics[topic_name] = topic_dict
     
-    for topic in data['topics']:
+    for topic in all_topics.values():
         topic_name = topic['topic']
-        distance = topic['distance']
-        original_topic = topic.get('original_topic', '')
+        original_topics = topic['original_topics'],
         facts = topic.get('facts', [])
         
         for question in topic['questions']:
@@ -57,8 +79,7 @@ def convert_to_hf_format(data: Dict[str, Any]) -> List[Dict[str, Any]]:
                 'choices': question['choices'],
                 'answer': question['answer'],
                 'topic': topic_name,
-                'distance': distance,
-                'original_topic': original_topic,
+                'original_topics': original_topics,
                 'facts': facts,
                 'question_type': question.get('type', 'multiple_choice'),
                 'difficulty': question.get('difficulty', 'medium'),
@@ -214,53 +235,47 @@ def upload_to_huggingface(
             print("Upload cancelled.")
             return
     
+    # Create repository if it doesn't exist
+    api = HfApi()
     try:
-        # Create repository if it doesn't exist
-        api = HfApi()
-        try:
-            create_repo(
-                repo_id=repo_id,
-                repo_type="dataset",
-                private=private,
-                exist_ok=True
-            )
-        except Exception as e:
-            print(f"Note: {e}")
-        
-        # Push to hub
-        print(f"\nUploading to {repo_id}...")
-        dataset_dict.push_to_hub(
-            repo_id,
-            private=private,
-            create_pr=create_pr
-        )
-        
-        # Create and upload dataset card
-        card_content = create_dataset_card(data, dataset_path)
-        card_path = Path("README.md")
-        card_path.write_text(card_content)
-        
-        api.upload_file(
-            path_or_fileobj=str(card_path),
-            path_in_repo="README.md",
+        create_repo(
             repo_id=repo_id,
             repo_type="dataset",
-            create_pr=create_pr
+            private=private,
+            exist_ok=True
         )
-        
-        # Clean up
-        card_path.unlink()
-        
-        print(f"\n✅ Successfully uploaded to: https://huggingface.co/datasets/{repo_id}")
-        
-        if create_pr:
-            print("Created pull request for review.")
-        
     except Exception as e:
-        print(f"\n❌ Error uploading dataset: {e}")
-        sys.exit(1)
-
-
+        print(f"Note: {e}")
+    
+    # Push to hub
+    print(f"\nUploading to {repo_id}...")
+    dataset_dict.push_to_hub(
+        repo_id,
+        private=private,
+        create_pr=create_pr
+    )
+    
+    # Create and upload dataset card
+    card_content = create_dataset_card(data, dataset_path)
+    card_path = Path("README.md")
+    card_path.write_text(card_content)
+    
+    api.upload_file(
+        path_or_fileobj=str(card_path),
+        path_in_repo="README.md",
+        repo_id=repo_id,
+        repo_type="dataset",
+        create_pr=create_pr
+    )
+    
+    # Clean up
+    card_path.unlink()
+    
+    print(f"\n✅ Successfully uploaded to: https://huggingface.co/datasets/{repo_id}")
+    
+    if create_pr:
+        print("Created pull request for review.")
+        
 def main():
     parser = argparse.ArgumentParser(
         description="Upload Ripple Bench dataset to Hugging Face Hub"
