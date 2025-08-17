@@ -4,10 +4,14 @@ Evaluate a single model on Ripple Bench Dataset and save results to CSV
 
 Usage:
     python evaluate_model_on_ripple.py <dataset_path> <model_name> --output-csv <output.csv>
+    python evaluate_model_on_ripple.py --hf-dataset royrin/ripple-bench <model_name> --output-csv <output.csv>
     
 Example:
+    # Load from local file
     python evaluate_model_on_ripple.py data/ripple_bench.json HuggingFaceH4/zephyr-7b-beta --output-csv zephyr_base_results.csv
-    python evaluate_model_on_ripple.py data/ripple_bench.json baulab/elm-zephyr-7b-beta --output-csv zephyr_elm_results.csv
+    
+    # Load from Hugging Face
+    python evaluate_model_on_ripple.py --hf-dataset royrin/ripple-bench HuggingFaceH4/zephyr-7b-beta --output-csv zephyr_base_results.csv
 """
 
 import json
@@ -18,9 +22,89 @@ from typing import List, Dict, Any
 from tqdm import tqdm
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from datasets import load_dataset
+import gc
+import shutil
+import os
 
 from ripple_bench.metrics import answer_single_question
 from ripple_bench.utils import read_dict
+
+# Available models - use model name or HF path directly
+MODELS = {
+    # Base models
+    "Llama-3-8b-Instruct": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "zephyr-7b-beta": "HuggingFaceH4/zephyr-7b-beta",
+
+    # LLM-GAT models
+    "llama-3-8b-instruct-graddiff":
+    "LLM-GAT/llama-3-8b-instruct-graddiff-checkpoint-8",
+    "llama-3-8b-instruct-elm": "LLM-GAT/llama-3-8b-instruct-elm-checkpoint-8",
+    "llama-3-8b-instruct-pbj": "LLM-GAT/llama-3-8b-instruct-pbj-checkpoint-8",
+    "llama-3-8b-instruct-tar": "LLM-GAT/llama-3-8b-instruct-tar-checkpoint-8",
+    "llama-3-8b-instruct-rmu": "LLM-GAT/llama-3-8b-instruct-rmu-checkpoint-8",
+    "llama-3-8b-instruct-rmu-lat":
+    "LLM-GAT/llama-3-8b-instruct-rmu-lat-checkpoint-8",
+    "llama-3-8b-instruct-reponoise":
+    "LLM-GAT/llama-3-8b-instruct-reponoise-checkpoint-8",
+    "llama-3-8b-instruct-rr": "LLM-GAT/llama-3-8b-instruct-rr-checkpoint-8",
+
+    # Zephyr unlearned models
+    "zephyr-7b-elm": "baulab/elm-zephyr-7b-beta",
+    "zephyr-7b-rmu": "cais/Zephyr_RMU",
+}
+
+# Base models to keep in cache
+BASE_MODELS = {"Llama-3-8b-Instruct", "zephyr-7b-beta"}
+
+
+def load_dataset_from_hf(dataset_name: str):
+    """Load Ripple Bench dataset from Hugging Face."""
+    print(f"Loading dataset from Hugging Face: {dataset_name}")
+
+    # Load the dataset
+    dataset = load_dataset(dataset_name)
+
+    # The dataset should have a 'train' split with the questions
+    if 'train' in dataset:
+        data = dataset['train']
+    else:
+        # If no train split, use the first available split
+        data = dataset[list(dataset.keys())[0]]
+
+    # Convert to the expected format
+    questions = []
+    for item in data:
+        # Each item should have the question structure
+        question = {
+            'question': item.get('question', ''),
+            'choices': item.get('choices', []),
+            'answer': item.get('answer', ''),
+            'topic': item.get('topic', 'unknown'),
+            'distance': item.get('distance', -1),
+            'id': item.get('id', '')
+        }
+        questions.append(question)
+
+    return {'questions': questions}
+
+
+def delete_model_from_cache(model_id: str, cache_dir: str = None):
+    """Delete a model from the HuggingFace cache to save space."""
+    if cache_dir is None:
+        # Default HF cache location
+        cache_dir = os.path.expanduser("~/.cache/huggingface/hub")
+
+    # Convert model_id to cache folder name format
+    model_cache_name = f"models--{model_id.replace('/', '--')}"
+    model_path = Path(cache_dir) / model_cache_name
+
+    if model_path.exists():
+        print(f"Deleting cached model: {model_path}")
+        shutil.rmtree(model_path)
+        print(f"Deleted {model_id} from cache")
+    else:
+        print(f"Model {model_id} not found in cache at {model_path}")
 
 
 def load_model(model_id: str, cache_dir: str = None):
@@ -56,12 +140,36 @@ def load_model(model_id: str, cache_dir: str = None):
 def evaluate_model(dataset_path: str,
                    model_name: str,
                    output_csv: str,
-                   cache_dir: str = None):
-    """Evaluate a model on ripple bench dataset and save results to CSV."""
+                   cache_dir: str = None,
+                   hf_dataset: str = None,
+                   delete_after: bool = False):
+    """Evaluate a model on ripple bench dataset and save results to CSV.
+    
+    Args:
+        dataset_path: Path to local dataset JSON file (mutually exclusive with hf_dataset)
+        model_name: Name of the model to evaluate (can be a key from MODELS dict or HF path)
+        output_csv: Path to save the results CSV
+        cache_dir: Optional cache directory for models
+        hf_dataset: Hugging Face dataset name (mutually exclusive with dataset_path)
+        delete_after: Whether to delete the model from cache after evaluation
+    """
 
-    # Load dataset
-    print(f"Loading dataset from {dataset_path}")
-    dataset = read_dict(dataset_path)
+    # Check if model_name is a key in MODELS dict
+    if model_name in MODELS:
+        model_id = MODELS[model_name]
+        model_display_name = model_name
+    else:
+        # Assume it's a direct HF model path
+        model_id = model_name
+        model_display_name = model_name
+
+    # Load dataset from either local file or Hugging Face
+    if hf_dataset:
+        print(f"Loading dataset from Hugging Face: {hf_dataset}")
+        dataset = load_dataset_from_hf(hf_dataset)
+    else:
+        print(f"Loading dataset from {dataset_path}")
+        dataset = read_dict(dataset_path)
 
     # Handle different dataset formats
     if 'questions' in dataset:
@@ -90,10 +198,10 @@ def evaluate_model(dataset_path: str,
     print(f"Loaded {len(questions)} questions")
 
     # Load model
-    model, tokenizer = load_model(model_name, cache_dir)
+    model, tokenizer = load_model(model_id, cache_dir)
 
     # Evaluate
-    print(f"\nEvaluating {model_name}...")
+    print(f"\nEvaluating {model_display_name}...")
     results = []
 
     for i, q in enumerate(tqdm(questions, desc="Evaluating")):
@@ -180,7 +288,7 @@ Answer:
                 'distance': q.get('distance',
                                   -1),  # Include distance for ripple analysis
                 'source': q.get('source', 'unknown'),
-                'model_name': model_name
+                'model_name': model_display_name
             }
 
             results.append(result)
@@ -236,14 +344,14 @@ Answer:
     print(f"\n{'='*50}")
     print(f"Evaluation Complete!")
     print(f"{'='*50}")
-    print(f"Model: {model_name}")
+    print(f"Model: {model_display_name}")
     print(f"Accuracy: {accuracy:.2%} ({correct}/{total})")
     print(f"Results saved to: {output_csv}")
 
     # Also save summary stats
     summary = {
-        'model_name': model_name,
-        'dataset_path': dataset_path,
+        'model_name': model_display_name,
+        'dataset_path': dataset_path if not hf_dataset else f"hf:{hf_dataset}",
         'total_questions': total,
         'correct': int(correct),
         'accuracy': float(accuracy),
@@ -255,12 +363,33 @@ Answer:
         json.dump(summary, f, indent=2)
     print(f"Summary saved to: {summary_path}")
 
+    # Clean up model from memory
+    del model
+    del tokenizer
+    torch.cuda.empty_cache()
+    gc.collect()
+
+    # Delete model from cache if requested and not a base model
+    if delete_after and model_display_name not in BASE_MODELS:
+        print(f"\nDeleting {model_display_name} from cache...")
+        delete_model_from_cache(model_id, cache_dir)
+    elif delete_after and model_display_name in BASE_MODELS:
+        print(f"\nKeeping base model {model_display_name} in cache")
+
 
 def main():
     parser = argparse.ArgumentParser(
         description="Evaluate a model on Ripple Bench Dataset")
-    parser.add_argument("dataset_path",
-                        help="Path to ripple bench dataset JSON file")
+
+    # Make dataset_path and hf_dataset mutually exclusive
+    dataset_group = parser.add_mutually_exclusive_group(required=True)
+    dataset_group.add_argument("dataset_path",
+                               nargs='?',
+                               help="Path to ripple bench dataset JSON file")
+    dataset_group.add_argument(
+        "--hf-dataset",
+        help="Hugging Face dataset name (e.g., royrin/ripple-bench)")
+
     parser.add_argument(
         "model_name",
         help="HuggingFace model name (e.g., HuggingFaceH4/zephyr-7b-beta)")
@@ -276,8 +405,23 @@ def main():
         help=
         "HuggingFace cache directory (e.g., /n/netscratch/vadhan_lab/Lab/rrinberg/HF_cache)"
     )
+    parser.add_argument(
+        "--delete-after",
+        action='store_true',
+        help="Delete model from cache after evaluation (keeps base models)")
+    parser.add_argument("--list-models",
+                        action='store_true',
+                        help="List available model shortcuts and exit")
 
     args = parser.parse_args()
+
+    # Handle list-models option
+    if args.list_models:
+        print("Available model shortcuts:")
+        for name, path in MODELS.items():
+            base_marker = " [BASE]" if name in BASE_MODELS else ""
+            print(f"  {name}: {path}{base_marker}")
+        return
 
     # Use hf_cache if provided, otherwise fall back to cache_dir
     cache_directory = args.hf_cache or args.cache_dir
@@ -285,7 +429,9 @@ def main():
     evaluate_model(dataset_path=args.dataset_path,
                    model_name=args.model_name,
                    output_csv=args.output_csv,
-                   cache_dir=cache_directory)
+                   cache_dir=cache_directory,
+                   hf_dataset=args.hf_dataset,
+                   delete_after=args.delete_after)
 
 
 if __name__ == "__main__":
