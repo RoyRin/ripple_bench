@@ -45,13 +45,28 @@ MODELS = {
     "llama-3-8b-instruct-rmu": "LLM-GAT/llama-3-8b-instruct-rmu-checkpoint-8",
     "llama-3-8b-instruct-rmu-lat":
     "LLM-GAT/llama-3-8b-instruct-rmu-lat-checkpoint-8",
-    "llama-3-8b-instruct-reponoise":
-    "LLM-GAT/llama-3-8b-instruct-reponoise-checkpoint-8",
+    "llama-3-8b-instruct-repnoise":
+    "LLM-GAT/llama-3-8b-instruct-repnoise-checkpoint-8",
     "llama-3-8b-instruct-rr": "LLM-GAT/llama-3-8b-instruct-rr-checkpoint-8",
 
     # Zephyr unlearned models
     "zephyr-7b-elm": "baulab/elm-zephyr-7b-beta",
     "zephyr-7b-rmu": "cais/Zephyr_RMU",
+}
+
+# LLM-GAT models that have multiple checkpoints (base paths without checkpoint number)
+LLM_GAT_MODELS = {
+    "llama-3-8b-instruct-graddiff":
+    "LLM-GAT/llama-3-8b-instruct-graddiff-checkpoint",
+    "llama-3-8b-instruct-elm": "LLM-GAT/llama-3-8b-instruct-elm-checkpoint",
+    "llama-3-8b-instruct-pbj": "LLM-GAT/llama-3-8b-instruct-pbj-checkpoint",
+    "llama-3-8b-instruct-tar": "LLM-GAT/llama-3-8b-instruct-tar-checkpoint",
+    "llama-3-8b-instruct-rmu": "LLM-GAT/llama-3-8b-instruct-rmu-checkpoint",
+    "llama-3-8b-instruct-rmu-lat":
+    "LLM-GAT/llama-3-8b-instruct-rmu-lat-checkpoint",
+    "llama-3-8b-instruct-repnoise":
+    "LLM-GAT/llama-3-8b-instruct-repnoise-checkpoint",
+    "llama-3-8b-instruct-rr": "LLM-GAT/llama-3-8b-instruct-rr-checkpoint",
 }
 
 # Base models to keep in cache
@@ -92,8 +107,8 @@ def load_dataset_from_hf(dataset_name: str):
 def delete_model_from_cache(model_id: str, cache_dir: str = None):
     """Delete a model from the HuggingFace cache to save space."""
     if cache_dir is None:
-        # Default HF cache location
-        cache_dir = os.path.expanduser("~/.cache/huggingface/hub")
+        # Use our default cache location
+        cache_dir = "/n/home04/rrinberg/data_dir/HF_cache"
 
     # Convert model_id to cache folder name format
     model_cache_name = f"models--{model_id.replace('/', '--')}"
@@ -396,15 +411,16 @@ def main():
     parser.add_argument("--output-csv",
                         required=True,
                         help="Output CSV file for results")
-    parser.add_argument("--cache-dir",
-                        default=None,
-                        help="Cache directory for HuggingFace models")
+    parser.add_argument(
+        "--cache-dir",
+        default="/n/home04/rrinberg/data_dir/HF_cache",
+        help=
+        "Cache directory for HuggingFace models (default: /n/home04/rrinberg/data_dir/HF_cache)"
+    )
     parser.add_argument(
         "--hf-cache",
         default=None,
-        help=
-        "HuggingFace cache directory (e.g., /n/netscratch/vadhan_lab/Lab/rrinberg/HF_cache)"
-    )
+        help="Override cache directory (deprecated, use --cache-dir instead)")
     parser.add_argument(
         "--delete-after",
         action='store_true',

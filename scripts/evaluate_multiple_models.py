@@ -39,13 +39,28 @@ MODELS = {
     "llama-3-8b-instruct-rmu": "LLM-GAT/llama-3-8b-instruct-rmu-checkpoint-8",
     "llama-3-8b-instruct-rmu-lat":
     "LLM-GAT/llama-3-8b-instruct-rmu-lat-checkpoint-8",
-    "llama-3-8b-instruct-reponoise":
-    "LLM-GAT/llama-3-8b-instruct-reponoise-checkpoint-8",
+    "llama-3-8b-instruct-repnoise":
+    "LLM-GAT/llama-3-8b-instruct-repnoise-checkpoint-8",
     "llama-3-8b-instruct-rr": "LLM-GAT/llama-3-8b-instruct-rr-checkpoint-8",
 
     # Zephyr unlearned models (delete after evaluation)
     "zephyr-7b-elm": "baulab/elm-zephyr-7b-beta",
     "zephyr-7b-rmu": "cais/Zephyr_RMU",
+}
+
+# LLM-GAT models that have multiple checkpoints
+LLM_GAT_MODELS = {
+    "llama-3-8b-instruct-graddiff":
+    "LLM-GAT/llama-3-8b-instruct-graddiff-checkpoint",
+    "llama-3-8b-instruct-elm": "LLM-GAT/llama-3-8b-instruct-elm-checkpoint",
+    "llama-3-8b-instruct-pbj": "LLM-GAT/llama-3-8b-instruct-pbj-checkpoint",
+    "llama-3-8b-instruct-tar": "LLM-GAT/llama-3-8b-instruct-tar-checkpoint",
+    "llama-3-8b-instruct-rmu": "LLM-GAT/llama-3-8b-instruct-rmu-checkpoint",
+    "llama-3-8b-instruct-rmu-lat":
+    "LLM-GAT/llama-3-8b-instruct-rmu-lat-checkpoint",
+    "llama-3-8b-instruct-repnoise":
+    "LLM-GAT/llama-3-8b-instruct-repnoise-checkpoint",
+    "llama-3-8b-instruct-rr": "LLM-GAT/llama-3-8b-instruct-rr-checkpoint",
 }
 
 # Base models to keep in cache
@@ -116,8 +131,8 @@ def load_model(model_id: str, cache_dir: str = None):
 def delete_model_from_cache(model_id: str, cache_dir: str = None):
     """Delete a model from the HuggingFace cache to save space."""
     if cache_dir is None:
-        # Default HF cache location
-        cache_dir = os.path.expanduser("~/.cache/huggingface/hub")
+        # Use our default cache location
+        cache_dir = "/n/home04/rrinberg/data_dir/HF_cache"
 
     # Convert model_id to cache folder name format
     model_cache_name = f"models--{model_id.replace('/', '--')}"
@@ -136,7 +151,7 @@ def evaluate_single_model(model_name: str,
                           questions: list,
                           output_dir: Path,
                           cache_dir: str = None,
-                          delete_after: bool = True):
+                          delete_after: bool = False):
     """Evaluate a single model and optionally delete it after evaluation."""
 
     output_csv = output_dir / f"{model_name}_ripple_results.csv"
@@ -279,7 +294,10 @@ Answer:
         gc.collect()
 
         # Delete model from cache if requested and not a base model
-        if delete_after and model_name not in BASE_MODELS:
+        # Check both the exact name and the base name (without checkpoint suffix)
+        base_name = model_name.split(
+            '-ckpt')[0] if '-ckpt' in model_name else model_name
+        if delete_after and base_name not in BASE_MODELS:
             delete_model_from_cache(model_id, cache_dir)
 
     except Exception as e:
@@ -305,15 +323,23 @@ def main():
     parser.add_argument("--output-dir",
                         required=True,
                         help="Output directory for results")
-    parser.add_argument("--cache-dir",
-                        default=None,
-                        help="Cache directory for HuggingFace models")
+    parser.add_argument(
+        "--cache-dir",
+        default="/n/home04/rrinberg/data_dir/HF_cache",
+        help=
+        "Cache directory for HuggingFace models (default: /n/home04/rrinberg/data_dir/HF_cache)"
+    )
     parser.add_argument("--models",
                         nargs='+',
                         help="Specific models to evaluate (defaults to all)")
-    parser.add_argument("--keep-models",
-                        action='store_true',
-                        help="Keep all models in cache after evaluation")
+    parser.add_argument(
+        "--delete-after",
+        action='store_true',
+        help="Delete models from cache after evaluation (keeps base models)")
+    parser.add_argument(
+        "--all-checkpoints",
+        action='store_true',
+        help="Evaluate all checkpoints (1-8) for LLM-GAT models")
 
     args = parser.parse_args()
 
@@ -349,12 +375,29 @@ def main():
 
     # Select models to evaluate
     if args.models:
-        models_to_eval = {k: v for k, v in MODELS.items() if k in args.models}
+        base_models = {k: v for k, v in MODELS.items() if k in args.models}
     else:
-        models_to_eval = MODELS
+        base_models = MODELS.copy()
+
+    # Expand LLM-GAT models to all checkpoints if requested
+    models_to_eval = {}
+    if args.all_checkpoints:
+        for model_name, model_path in base_models.items():
+            if model_name in LLM_GAT_MODELS:
+                # Expand to all checkpoints (1-8)
+                base_path = LLM_GAT_MODELS[model_name]
+                for checkpoint in range(1, 9):
+                    checkpoint_name = f"{model_name}-ckpt{checkpoint}"
+                    checkpoint_path = f"{base_path}-{checkpoint}"
+                    models_to_eval[checkpoint_name] = checkpoint_path
+            else:
+                # Keep non-LLM-GAT models as-is
+                models_to_eval[model_name] = model_path
+    else:
+        models_to_eval = base_models
 
     print(f"\nWill evaluate {len(models_to_eval)} models:")
-    for name in models_to_eval:
+    for name in sorted(models_to_eval.keys()):
         print(f"  - {name}")
 
     # Evaluate each model
@@ -364,7 +407,7 @@ def main():
                               questions=questions,
                               output_dir=output_dir,
                               cache_dir=args.cache_dir,
-                              delete_after=not args.keep_models)
+                              delete_after=args.delete_after)
 
     print(f"\n{'='*60}")
     print("All evaluations complete!")
