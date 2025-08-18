@@ -339,6 +339,11 @@ def main():
                         nargs='+',
                         help="Specific models to evaluate (defaults to all)")
     parser.add_argument(
+        "--model-index",
+        type=int,
+        help="Index of single model to evaluate (0-based, for SLURM array jobs)"
+    )
+    parser.add_argument(
         "--delete-after",
         action='store_true',
         help="Delete models from cache after evaluation (keeps base models)")
@@ -380,7 +385,17 @@ def main():
     print(f"Loaded {len(questions)} questions")
 
     # Select models to evaluate
-    if args.models:
+    if args.model_index is not None:
+        # Use model index for SLURM array jobs
+        model_list = list(MODELS.keys())
+        if args.model_index >= len(model_list):
+            raise ValueError(
+                f"Model index {args.model_index} out of range. Available models: 0-{len(model_list)-1}"
+            )
+        selected_model = model_list[args.model_index]
+        base_models = {selected_model: MODELS[selected_model]}
+        print(f"Selected model at index {args.model_index}: {selected_model}")
+    elif args.models:
         base_models = {k: v for k, v in MODELS.items() if k in args.models}
     else:
         base_models = MODELS.copy()

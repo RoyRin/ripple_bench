@@ -1,6 +1,6 @@
 #!/bin/sh
 #SBATCH --job-name=evaluate_ripple
-#SBATCH --array=0-0
+#SBATCH --array=0-11
 #SBATCH --partition=kempner_h100
 #SBATCH --mem=80G
 #SBATCH --gres=gpu:1
@@ -25,10 +25,23 @@ CODE_DIR=/n/home04/rrinberg/code/data_to_concept_unlearning
 ## Run the experiment
 cd $CODE_DIR
 
+# Model indices:
+# 0: Llama-3-8b-Instruct (base)
+# 1: zephyr-7b-beta (base)
+# 2: zephyr-7b-elm
+# 3: zephyr-7b-rmu
+# 4-11: LLM-GAT models (will evaluate all 8 checkpoints each with --all-checkpoints)
 
-python scripts/evaluate_multiple_models.py data/ripple_bench_2025-07-12_full/ripple_bench_dataset.json --output-dir results/multiple_models/all  --all-checkpoints
+python scripts/evaluate_multiple_models.py \
+    data/ripple_bench_2025-07-12_full/ripple_bench_dataset.json \
+    --output-dir results/multiple_models/all \
+    --model-index $SLURM_ARRAY_TASK_ID \
+    --all-checkpoints
 
-# python scripts/evaluate_multiple_models.py data/ripple_bench_2025-07-12_full/ripple_bench_dataset.json --output-dir results/multiple_models/top/
+# Total evaluations with --all-checkpoints:
+# - Indices 0-3: 4 models × 1 evaluation = 4
+# - Indices 4-11: 8 models × 8 checkpoints = 64
+# Total: 68 model evaluations
 
 
 #./evaluate_models_on_ripple.sh
