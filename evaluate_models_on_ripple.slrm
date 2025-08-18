@@ -4,7 +4,7 @@
 #SBATCH --partition=kempner_h100
 #SBATCH --mem=80G
 #SBATCH --gres=gpu:1
-#SBATCH -t 0-72:00
+#SBATCH -t 0-32:00
 #SBATCH -c 1
 #SBATCH --output=/n/home04/rrinberg/catered_out/ripple_bench/evaluate-ripple-%A__%a.out
 #SBATCH --mail-user=royrinberg@gmail.com  
@@ -34,7 +34,7 @@ cd $CODE_DIR
 
 python scripts/evaluate_multiple_models.py \
     data/ripple_bench_2025-07-12_full/ripple_bench_dataset.json \
-    --output-dir results/multiple_models/all \
+    --output-dir results/multiple_models/parallelized/ \
     --model-index $SLURM_ARRAY_TASK_ID \
     --all-checkpoints
 
