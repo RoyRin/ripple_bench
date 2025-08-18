@@ -27,7 +27,19 @@ plt.rcParams.update({
     'text.usetex': False,
 })
 
-# Model groups and colors
+# Method colors - consistent across base models
+METHOD_COLORS = {
+    'elm': '#FF6B6B',  # Red
+    'rmu': '#4ECDC4',  # Teal
+    'graddiff': '#95E77E',  # Light green
+    'pbj': '#FFD93D',  # Yellow
+    'tar': '#A8E6CF',  # Mint
+    'rmu-lat': '#FF8B94',  # Pink
+    'repnoise': '#B4A7D6',  # Lavender
+    'rr': '#FFB347'  # Orange
+}
+
+# Model groups
 MODEL_GROUPS = {
     'Base': {
         'models': ['Llama-3-8b-Instruct', 'zephyr-7b-beta'],
@@ -35,7 +47,7 @@ MODEL_GROUPS = {
     },
     'Zephyr Unlearned': {
         'models': ['zephyr-7b-elm', 'zephyr-7b-rmu'],
-        'colors': ['#FF6B6B', '#4ECDC4']
+        'marker': 'o'  # Circle marker for Zephyr-based models
     },
     'LLM-GAT Methods': {
         'models': [
@@ -46,8 +58,8 @@ MODEL_GROUPS = {
             'llama-3-8b-instruct-repnoise-ckpt8',
             'llama-3-8b-instruct-rr-ckpt8'
         ],
-        'colors':
-        plt.cm.tab10(np.linspace(0, 1, 8))
+        'marker':
+        's'  # Square marker for Llama-based models
     }
 }
 
@@ -113,7 +125,7 @@ def plot_all_models_comparison(results_dir,
     print("\nPlotting full distance range (0-100)...")
 
     # Plot Zephyr unlearned models
-    for i, model in enumerate(MODEL_GROUPS['Zephyr Unlearned']['models']):
+    for model in MODEL_GROUPS['Zephyr Unlearned']['models']:
         df = load_results(results_dir, model)
         if df is not None:
             model_acc = calculate_accuracy_by_distance(df, max_distance)
@@ -123,27 +135,33 @@ def plot_all_models_comparison(results_dir,
                 set(base_accuracies.keys()) & set(model_acc.keys()))
             deltas = [base_accuracies[d] - model_acc[d] for d in distances]
 
+            # Get method name and color
+            method = model.split('-')[-1]  # 'elm' or 'rmu'
+            color = METHOD_COLORS.get(method, '#888888')
+
             # Apply smoothing
             if len(distances) > smoothing_window:
                 deltas_smooth = pd.Series(deltas).rolling(
                     window=smoothing_window, center=True).mean()
                 ax1.plot(distances,
                          deltas_smooth,
-                         label=model.replace('-', ' ').title(),
-                         color=MODEL_GROUPS['Zephyr Unlearned']['colors'][i],
+                         label=f'Zephyr-{method.upper()}',
+                         color=color,
                          alpha=0.8,
-                         linewidth=2.5)
+                         linewidth=2.5,
+                         linestyle='--')  # Dashed for Zephyr
             else:
                 ax1.plot(distances,
                          deltas,
-                         label=model.replace('-', ' ').title(),
-                         color=MODEL_GROUPS['Zephyr Unlearned']['colors'][i],
+                         label=f'Zephyr-{method.upper()}',
+                         color=color,
                          alpha=0.8,
-                         linewidth=2.5)
+                         linewidth=2.5,
+                         linestyle='--')  # Dashed for Zephyr
             print(f"  Plotted {model}")
 
     # Plot LLM-GAT models (checkpoint 8)
-    for i, model in enumerate(MODEL_GROUPS['LLM-GAT Methods']['models']):
+    for model in MODEL_GROUPS['LLM-GAT Methods']['models']:
         df = load_results(results_dir, model)
         if df is not None:
             model_acc = calculate_accuracy_by_distance(df, max_distance)
@@ -153,25 +171,30 @@ def plot_all_models_comparison(results_dir,
                 set(base_accuracies.keys()) & set(model_acc.keys()))
             deltas = [base_accuracies[d] - model_acc[d] for d in distances]
 
+            # Get method name and color
+            method_full = model.replace('llama-3-8b-instruct-',
+                                        '').replace('-ckpt8', '')
+            color = METHOD_COLORS.get(method_full, '#888888')
+
             # Apply smoothing
             if len(distances) > smoothing_window:
                 deltas_smooth = pd.Series(deltas).rolling(
                     window=smoothing_window, center=True).mean()
                 ax1.plot(distances,
                          deltas_smooth,
-                         label=model.replace('llama-3-8b-instruct-',
-                                             '').replace('-ckpt8', '').upper(),
-                         color=MODEL_GROUPS['LLM-GAT Methods']['colors'][i],
-                         alpha=0.7,
-                         linewidth=2)
+                         label=f'Llama3-{method_full.upper()}',
+                         color=color,
+                         alpha=0.8,
+                         linewidth=2.5,
+                         linestyle='-')  # Solid for Llama
             else:
                 ax1.plot(distances,
                          deltas,
-                         label=model.replace('llama-3-8b-instruct-',
-                                             '').replace('-ckpt8', '').upper(),
-                         color=MODEL_GROUPS['LLM-GAT Methods']['colors'][i],
-                         alpha=0.7,
-                         linewidth=2)
+                         label=f'Llama3-{method_full.upper()}',
+                         color=color,
+                         alpha=0.8,
+                         linewidth=2.5,
+                         linestyle='-')  # Solid for Llama
             print(f"  Plotted {model}")
 
     ax1.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
@@ -201,7 +224,7 @@ def plot_all_models_comparison(results_dir,
     print("\nPlotting focused view (0-30)...")
 
     # Plot Zephyr unlearned models
-    for i, model in enumerate(MODEL_GROUPS['Zephyr Unlearned']['models']):
+    for model in MODEL_GROUPS['Zephyr Unlearned']['models']:
         df = load_results(results_dir, model)
         if df is not None:
             # Use the same accuracy calculation as the full plot
@@ -212,17 +235,23 @@ def plot_all_models_comparison(results_dir,
             distances = [d for d in distances if d <= 30]
             deltas = [base_accuracies[d] - model_acc[d] for d in distances]
 
-            ax2.plot(distances,
-                     deltas,
-                     label=model.replace('-', ' ').title(),
-                     color=MODEL_GROUPS['Zephyr Unlearned']['colors'][i],
-                     alpha=0.8,
-                     marker='o',
-                     markersize=4,
-                     linewidth=2.5)
+            # Get method name and color
+            method = model.split('-')[-1]
+            color = METHOD_COLORS.get(method, '#888888')
+
+            ax2.plot(
+                distances,
+                deltas,
+                label=f'Zephyr-{method.upper()}',
+                color=color,
+                alpha=0.8,
+                marker='o',  # Circle for Zephyr
+                markersize=5,
+                linewidth=2.5,
+                linestyle='--')  # Dashed for Zephyr
 
     # Plot LLM-GAT models
-    for i, model in enumerate(MODEL_GROUPS['LLM-GAT Methods']['models']):
+    for model in MODEL_GROUPS['LLM-GAT Methods']['models']:
         df = load_results(results_dir, model)
         if df is not None:
             # Use the same accuracy calculation as the full plot
@@ -233,15 +262,21 @@ def plot_all_models_comparison(results_dir,
             distances = [d for d in distances if d <= 30]
             deltas = [base_accuracies[d] - model_acc[d] for d in distances]
 
-            ax2.plot(distances,
-                     deltas,
-                     label=model.replace('llama-3-8b-instruct-',
-                                         '').replace('-ckpt8', '').upper(),
-                     color=MODEL_GROUPS['LLM-GAT Methods']['colors'][i],
-                     alpha=0.7,
-                     marker='s',
-                     markersize=3,
-                     linewidth=2)
+            # Get method name and color
+            method_full = model.replace('llama-3-8b-instruct-',
+                                        '').replace('-ckpt8', '')
+            color = METHOD_COLORS.get(method_full, '#888888')
+
+            ax2.plot(
+                distances,
+                deltas,
+                label=f'Llama3-{method_full.upper()}',
+                color=color,
+                alpha=0.8,
+                marker='s',  # Square for Llama
+                markersize=4,
+                linewidth=2.5,
+                linestyle='-')  # Solid for Llama
 
     ax2.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
     ax2.set_xlabel('Distance from WMDP Topics', fontsize=14)
