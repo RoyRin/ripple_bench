@@ -104,11 +104,13 @@ def plot_all_models_comparison(results_dir,
     primary_base = 'Llama-3-8b-Instruct' if 'Llama-3-8b-Instruct' in base_results else 'zephyr-7b-beta'
     base_accuracies = base_results[primary_base]
 
-    # Create figure with two subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    # Get datetime string with time for filenames
+    datetime_str = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # Plot 1: All models
-    print("\nPlotting all models comparison...")
+    # ========== PLOT 1: Full distance range ==========
+    fig1, ax1 = plt.subplots(figsize=(12, 8))
+
+    print("\nPlotting full distance range (0-100)...")
 
     # Plot Zephyr unlearned models
     for i, model in enumerate(MODEL_GROUPS['Zephyr Unlearned']['models']):
@@ -129,13 +131,15 @@ def plot_all_models_comparison(results_dir,
                          deltas_smooth,
                          label=model.replace('-', ' ').title(),
                          color=MODEL_GROUPS['Zephyr Unlearned']['colors'][i],
-                         alpha=0.8)
+                         alpha=0.8,
+                         linewidth=2.5)
             else:
                 ax1.plot(distances,
                          deltas,
                          label=model.replace('-', ' ').title(),
                          color=MODEL_GROUPS['Zephyr Unlearned']['colors'][i],
-                         alpha=0.8)
+                         alpha=0.8,
+                         linewidth=2.5)
             print(f"  Plotted {model}")
 
     # Plot LLM-GAT models (checkpoint 8)
@@ -158,35 +162,53 @@ def plot_all_models_comparison(results_dir,
                          label=model.replace('llama-3-8b-instruct-',
                                              '').replace('-ckpt8', '').upper(),
                          color=MODEL_GROUPS['LLM-GAT Methods']['colors'][i],
-                         alpha=0.7)
+                         alpha=0.7,
+                         linewidth=2)
             else:
                 ax1.plot(distances,
                          deltas,
                          label=model.replace('llama-3-8b-instruct-',
                                              '').replace('-ckpt8', '').upper(),
                          color=MODEL_GROUPS['LLM-GAT Methods']['colors'][i],
-                         alpha=0.7)
+                         alpha=0.7,
+                         linewidth=2)
             print(f"  Plotted {model}")
 
     ax1.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
-    ax1.set_xlabel('Distance from WMDP Topics')
-    ax1.set_ylabel('Accuracy Delta (Base - Unlearned)')
-    ax1.set_title('Ripple Effects: All Unlearning Methods')
-    ax1.legend(loc='upper right', ncol=2, fontsize=9)
+    ax1.set_xlabel('Distance from WMDP Topics', fontsize=14)
+    ax1.set_ylabel('Accuracy Delta (Base - Unlearned)', fontsize=14)
+    ax1.set_title('Ripple Effects: All Unlearning Methods (Full Range)',
+                  fontsize=16)
+    ax1.legend(loc='upper right', ncol=2, fontsize=10)
     ax1.grid(True, alpha=0.3)
     ax1.set_xlim(0, max_distance)
 
-    # Plot 2: Focused view (distance 0-30)
-    print("\nPlotting focused view (0-30)...")
-    ax2.set_xlim(0, 30)
+    plt.tight_layout()
 
-    # Repeat plotting for focused view
+    # Save full range plot
+    output_path = output_dir / f"ripple_all_models_full_{datetime_str}.pdf"
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print(f"\nSaved full range plot to {output_path}")
+
+    output_path_png = output_dir / f"ripple_all_models_full_{datetime_str}.png"
+    plt.savefig(output_path_png, dpi=150, bbox_inches='tight')
+    print(f"Saved PNG to {output_path_png}")
+
+    plt.show()
+
+    # ========== PLOT 2: Focused view (0-30) ==========
+    fig2, ax2 = plt.subplots(figsize=(12, 8))
+    print("\nPlotting focused view (0-30)...")
+
+    # Plot Zephyr unlearned models
     for i, model in enumerate(MODEL_GROUPS['Zephyr Unlearned']['models']):
         df = load_results(results_dir, model)
         if df is not None:
-            model_acc = calculate_accuracy_by_distance(df, 30)
+            # Use the same accuracy calculation as the full plot
+            model_acc = calculate_accuracy_by_distance(df, max_distance)
             distances = sorted(
                 set(base_accuracies.keys()) & set(model_acc.keys()))
+            # Filter to only show distances 0-30
             distances = [d for d in distances if d <= 30]
             deltas = [base_accuracies[d] - model_acc[d] for d in distances]
 
@@ -196,14 +218,18 @@ def plot_all_models_comparison(results_dir,
                      color=MODEL_GROUPS['Zephyr Unlearned']['colors'][i],
                      alpha=0.8,
                      marker='o',
-                     markersize=3)
+                     markersize=4,
+                     linewidth=2.5)
 
+    # Plot LLM-GAT models
     for i, model in enumerate(MODEL_GROUPS['LLM-GAT Methods']['models']):
         df = load_results(results_dir, model)
         if df is not None:
-            model_acc = calculate_accuracy_by_distance(df, 30)
+            # Use the same accuracy calculation as the full plot
+            model_acc = calculate_accuracy_by_distance(df, max_distance)
             distances = sorted(
                 set(base_accuracies.keys()) & set(model_acc.keys()))
+            # Filter to only show distances 0-30
             distances = [d for d in distances if d <= 30]
             deltas = [base_accuracies[d] - model_acc[d] for d in distances]
 
@@ -214,26 +240,27 @@ def plot_all_models_comparison(results_dir,
                      color=MODEL_GROUPS['LLM-GAT Methods']['colors'][i],
                      alpha=0.7,
                      marker='s',
-                     markersize=2)
+                     markersize=3,
+                     linewidth=2)
 
     ax2.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
-    ax2.set_xlabel('Distance from WMDP Topics')
-    ax2.set_ylabel('Accuracy Delta (Base - Unlearned)')
-    ax2.set_title('Ripple Effects: Focused View (Distance 0-30)')
+    ax2.set_xlabel('Distance from WMDP Topics', fontsize=14)
+    ax2.set_ylabel('Accuracy Delta (Base - Unlearned)', fontsize=14)
+    ax2.set_title('Ripple Effects: Focused View (Distance 0-30)', fontsize=16)
+    ax2.legend(loc='upper right', ncol=2, fontsize=10)
     ax2.grid(True, alpha=0.3)
+    ax2.set_xlim(0, 30)
 
     plt.tight_layout()
 
-    # Save plot
-    date_str = datetime.now().strftime("%Y%m%d")
-    output_path = output_dir / f"ripple_all_models_comparison_{date_str}.pdf"
+    # Save focused view plot
+    output_path = output_dir / f"ripple_all_models_focused_{datetime_str}.pdf"
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"\nSaved plot to {output_path}")
+    print(f"\nSaved focused view plot to {output_path}")
 
-    # Also save as PNG
-    output_path_png = output_dir / f"ripple_all_models_comparison_{date_str}.png"
+    output_path_png = output_dir / f"ripple_all_models_focused_{datetime_str}.png"
     plt.savefig(output_path_png, dpi=150, bbox_inches='tight')
-    print(f"Saved plot to {output_path_png}")
+    print(f"Saved PNG to {output_path_png}")
 
     plt.show()
 
