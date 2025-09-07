@@ -1248,7 +1248,7 @@ def main():
     else:
         print(f"Wikipedia source: Online API")
     print(
-        f"Neighbor sampling: {args.k_neighbors} neighbors from every {args.neighbor_sample_step}th position (out of first 300)"
+        f"Neighbor sampling: {args.k_neighbors} neighbors from every {args.neighbor_sample_step}th position (out of first {args.k_neighbors})"
     )
     if args.max_workers > 1:
         print(
