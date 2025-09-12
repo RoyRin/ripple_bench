@@ -33,7 +33,7 @@ python3 $BASE/scripts/build_ripple_bench_from_wmdp.py \
      --k-neighbors 1000 \
     --neighbor-sample-step 3 \
     --questions-per-topic 5 \
-    --output-dir $BASE/data/ripple_bench_2025-09-05-bio \
+    --output-dir $BASE/data/ripple_bench_2025-09-12-bio \
     --use-local-wikipedia \
     --wiki-json-path /n/home04/rrinberg/data_dir/wikipedia/json \
     --max-workers 4 \
