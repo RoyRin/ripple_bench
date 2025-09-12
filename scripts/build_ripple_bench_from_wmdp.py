@@ -507,7 +507,7 @@ Only return the JSON list, no other text."""
             topics: List[str],
             k_neighbors: int = 5,
             neighbor_sample_step: int = 3,
-            max_neighbors_to_fetch: int = 300,
+            max_neighbors_to_fetch: int = None,
             cache_file: str = None) -> Dict[str, List[str]]:
         """Generate ordered list of related topics using RAG."""
         print("Generating ordered topic lists using RAG...")
@@ -552,14 +552,19 @@ Only return the JSON list, no other text."""
         print(
             f"Processing {len(remaining_topics)} remaining topics (already processed: {len(processed_topics)})"
         )
+
+        # Calculate max_neighbors_to_fetch if not specified
+        if max_neighbors_to_fetch is None:
+            max_neighbors_to_fetch = k_neighbors * neighbor_sample_step
+
         print(
-            f"Fetching {max_neighbors_to_fetch} neighbors, sampling every {neighbor_sample_step} neighbor"
+            f"Fetching {max_neighbors_to_fetch} neighbors, sampling every {neighbor_sample_step} neighbor to get {k_neighbors} final neighbors"
         )
 
         for topic in tqdm(remaining_topics):
             # Search for more topics than needed
             num_to_fetch = min(max_neighbors_to_fetch + 1,
-                               1000)  # Cap at 1000 for safety
+                               10000)  # Increased cap for large k_neighbors
             similar_docs = vectorstore.similarity_search(topic, k=num_to_fetch)
 
             # Get all neighboring topics (excluding the topic itself)
@@ -1070,6 +1075,8 @@ Only return the JSON list, no other text."""
             unique_topics,
             k_neighbors,
             neighbor_sample_step=neighbor_sample_step,
+            max_neighbors_to_fetch=
+            None,  # Will be calculated based on k_neighbors
             cache_file=cache_files.get('neighbors'))
 
         # Step 4: Extract facts
