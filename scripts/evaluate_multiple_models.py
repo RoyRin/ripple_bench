@@ -20,6 +20,7 @@ from datasets import load_dataset
 import gc
 import shutil
 import os
+import re
 
 from ripple_bench.metrics import answer_single_question
 from ripple_bench.utils import read_dict
@@ -71,6 +72,44 @@ LLM_GAT_MODELS = {
 
 # Base models to keep in cache
 BASE_MODELS = {"Llama-3-8b-Instruct", "zephyr-7b-beta"}
+
+
+def discover_models_from_cache(cache_dir: str) -> Dict[str, str]:
+    """Discover LLM-GAT models and base model from the cache directory."""
+    cache_path = Path(cache_dir)
+    discovered_models = {}
+    
+    if not cache_path.exists():
+        print(f"Cache directory {cache_dir} does not exist")
+        return discovered_models
+    
+    # Add base model first (index 0)
+    base_model_path = cache_path / "models--meta-llama--Meta-Llama-3-8B-Instruct"
+    if base_model_path.exists():
+        discovered_models["Llama-3-8b-Instruct"] = "meta-llama/Meta-Llama-3-8B-Instruct"
+        print("Found base model: Llama-3-8b-Instruct")
+    
+    # Look for models--LLM-GAT--* directories
+    for model_dir in cache_path.glob("models--LLM-GAT--*"):
+        # Extract model name from directory name
+        # Format: models--LLM-GAT--llama-3-8b-instruct-elm-checkpoint-1
+        model_name = model_dir.name.replace("models--LLM-GAT--", "")
+        
+        # Convert to HuggingFace model ID format
+        # llama-3-8b-instruct-elm-checkpoint-1 -> LLM-GAT/llama-3-8b-instruct-elm-checkpoint-1
+        model_id = f"LLM-GAT/{model_name}"
+        
+        # Create a clean display name
+        # Remove checkpoint number for cleaner naming
+        display_name = model_name.replace("-checkpoint-", "-ckpt")
+        
+        discovered_models[display_name] = model_id
+    
+    print(f"Discovered {len(discovered_models)} models from cache:")
+    for i, name in enumerate(sorted(discovered_models.keys())):
+        print(f"  - {i}: {name}")
+    
+    return discovered_models
 
 
 def load_dataset_from_hf(dataset_name: str):
@@ -351,6 +390,10 @@ def main():
         "--all-checkpoints",
         action='store_true',
         help="Evaluate all checkpoints (1-8) for LLM-GAT models")
+    parser.add_argument(
+        "--discover-cache",
+        action='store_true',
+        help="Discover and evaluate all LLM-GAT models from cache directory")
 
     args = parser.parse_args()
 
@@ -385,24 +428,48 @@ def main():
     print(f"Loaded {len(questions)} questions")
 
     # Select models to evaluate
-    if args.model_index is not None:
-        # Use model index for SLURM array jobs
-        model_list = list(MODELS.keys())
-        if args.model_index >= len(model_list):
-            raise ValueError(
-                f"Model index {args.model_index} out of range. Available models: 0-{len(model_list)-1}"
-            )
-        selected_model = model_list[args.model_index]
-        base_models = {selected_model: MODELS[selected_model]}
-        print(f"Selected model at index {args.model_index}: {selected_model}")
-    elif args.models:
-        base_models = {k: v for k, v in MODELS.items() if k in args.models}
+    if args.discover_cache:
+        # Discover models from cache directory
+        discovered_models = discover_models_from_cache(args.cache_dir)
+        if not discovered_models:
+            print("No LLM-GAT models found in cache directory")
+            return
+        
+        if args.model_index is not None:
+            # Use model index for SLURM array jobs
+            model_list = list(discovered_models.keys())
+            if args.model_index >= len(model_list):
+                raise ValueError(
+                    f"Model index {args.model_index} out of range. Available models: 0-{len(model_list)-1}"
+                )
+            selected_model = model_list[args.model_index]
+            base_models = {selected_model: discovered_models[selected_model]}
+            print(f"Selected model at index {args.model_index}: {selected_model}")
+        elif args.models:
+            base_models = {k: v for k, v in discovered_models.items() if k in args.models}
+        else:
+            base_models = discovered_models.copy()
     else:
-        base_models = MODELS.copy()
+        # Use predefined models
+        if args.model_index is not None:
+            # Use model index for SLURM array jobs
+            model_list = list(MODELS.keys())
+            if args.model_index >= len(model_list):
+                raise ValueError(
+                    f"Model index {args.model_index} out of range. Available models: 0-{len(model_list)-1}"
+                )
+            selected_model = model_list[args.model_index]
+            base_models = {selected_model: MODELS[selected_model]}
+            print(f"Selected model at index {args.model_index}: {selected_model}")
+        elif args.models:
+            base_models = {k: v for k, v in MODELS.items() if k in args.models}
+        else:
+            base_models = MODELS.copy()
 
     # Expand LLM-GAT models to all checkpoints if requested
     models_to_eval = {}
-    if args.all_checkpoints:
+    if args.all_checkpoints and not args.discover_cache:
+        # Only expand checkpoints for predefined models, not discovered ones
         for model_name, model_path in base_models.items():
             if model_name in LLM_GAT_MODELS:
                 # Expand to all checkpoints (1-8)
