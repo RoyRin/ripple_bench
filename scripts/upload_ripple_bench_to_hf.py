@@ -49,6 +49,8 @@ def convert_to_hf_format(data: Dict[str, Any]) -> List[Dict[str, Any]]:
     all_topics = {}
 
     for topic_dict in data['topics']:
+
+        
         topic_name = topic_dict['topic']
         og_topic = topic_dict["original_topic"]
         og_distance = topic_dict["distance"]
@@ -206,6 +208,7 @@ Source: {dataset_path}
 def upload_to_huggingface(
     dataset_path: str,
     repo_id: str = "royrin/ripple-bench",
+    subdir: str = None,
     private: bool = False,
     create_pr: bool = False
 ):
@@ -227,6 +230,8 @@ def upload_to_huggingface(
     print(f"\nDataset ready for upload:")
     print(f"  - Format: {dataset}")
     print(f"  - Repository: {repo_id}")
+    if subdir:
+        print(f"  - Subdirectory: {subdir}")
     
     # Confirm upload
     if not create_pr:
@@ -247,22 +252,94 @@ def upload_to_huggingface(
     except Exception as e:
         print(f"Note: {e}")
     
-    # Push to hub
+    # Upload dataset to hub
     print(f"\nUploading to {repo_id}...")
-    dataset_dict.push_to_hub(
-        repo_id,
-        private=private,
-        create_pr=create_pr
-    )
+    if subdir:
+        print(f"  - Subdirectory: {subdir}")
+    
+    # Create temporary directory for dataset files
+    import tempfile
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        
+        # Save dataset to temporary directory
+        dataset_dict.save_to_disk(str(temp_path))
+        
+        # Upload files to the correct subdirectory
+        api = HfApi()
+        
+        # Debug: List all files in temp directory
+        print(f"  - Debug: Files in temp directory:")
+        for file_path in temp_path.rglob("*"):
+            if file_path.is_file():
+                print(f"    {file_path.relative_to(temp_path)}")
+        
+        # Upload the actual data file (data-00000-of-00001.arrow)
+        data_arrow_path = temp_path / "train" / "data-00000-of-00001.arrow"
+        if data_arrow_path.exists():
+            api.upload_file(
+                path_or_fileobj=str(data_arrow_path),
+                path_in_repo=f"{subdir}/train.arrow" if subdir else "train.arrow",
+                repo_id=repo_id,
+                repo_type="dataset",
+                create_pr=create_pr
+            )
+            print(f"  - Uploaded train.arrow to {'/' + subdir if subdir else 'root'} (from {data_arrow_path.relative_to(temp_path)})")
+        else:
+            print("  - Warning: Could not find data-00000-of-00001.arrow file to upload")
+        
+        # Upload dataset_info.json from train/ directory
+        info_json_path = temp_path / "train" / "dataset_info.json"
+        if info_json_path.exists():
+            api.upload_file(
+                path_or_fileobj=str(info_json_path),
+                path_in_repo=f"{subdir}/dataset_info.json" if subdir else "dataset_info.json",
+                repo_id=repo_id,
+                repo_type="dataset",
+                create_pr=create_pr
+            )
+            print(f"  - Uploaded dataset_info.json to {'/' + subdir if subdir else 'root'} (from {info_json_path.relative_to(temp_path)})")
+        else:
+            print("  - Warning: Could not find train/dataset_info.json file to upload")
+        
+        # Upload state.json from train/ directory
+        state_json_path = temp_path / "train" / "state.json"
+        if state_json_path.exists():
+            api.upload_file(
+                path_or_fileobj=str(state_json_path),
+                path_in_repo=f"{subdir}/state.json" if subdir else "state.json",
+                repo_id=repo_id,
+                repo_type="dataset",
+                create_pr=create_pr
+            )
+            print(f"  - Uploaded state.json to {'/' + subdir if subdir else 'root'} (from {state_json_path.relative_to(temp_path)})")
+        else:
+            print("  - Info: No train/state.json file found (this is optional)")
+        
+        # Upload dataset_dict.json from root
+        dataset_dict_path = temp_path / "dataset_dict.json"
+        if dataset_dict_path.exists():
+            api.upload_file(
+                path_or_fileobj=str(dataset_dict_path),
+                path_in_repo=f"{subdir}/dataset_dict.json" if subdir else "dataset_dict.json",
+                repo_id=repo_id,
+                repo_type="dataset",
+                create_pr=create_pr
+            )
+            print(f"  - Uploaded dataset_dict.json to {'/' + subdir if subdir else 'root'} (from {dataset_dict_path.relative_to(temp_path)})")
+        else:
+            print("  - Info: No dataset_dict.json file found (this is optional)")
     
     # Create and upload dataset card
     card_content = create_dataset_card(data, dataset_path)
     card_path = Path("README.md")
     card_path.write_text(card_content)
     
+    # Upload README to the appropriate location
+    readme_path = f"{subdir}/README.md" if subdir else "README.md"
     api.upload_file(
         path_or_fileobj=str(card_path),
-        path_in_repo="README.md",
+        path_in_repo=readme_path,
         repo_id=repo_id,
         repo_type="dataset",
         create_pr=create_pr
@@ -271,7 +348,10 @@ def upload_to_huggingface(
     # Clean up
     card_path.unlink()
     
-    print(f"\n✅ Successfully uploaded to: https://huggingface.co/datasets/{repo_id}")
+    final_url = f"https://huggingface.co/datasets/{repo_id}"
+    if subdir:
+        final_url += f"/tree/main/{subdir}"
+    print(f"\n✅ Successfully uploaded to: {final_url}")
     
     if create_pr:
         print("Created pull request for review.")
@@ -301,6 +381,12 @@ def main():
         action="store_true",
         help="Create a pull request instead of pushing directly"
     )
+    parser.add_argument(
+        "--subdir",
+        type=str,
+        required=True,
+        help="Subdirectory within the repository to upload to (e.g., 'v1', 'experiments/run1')"
+    )
     
     args = parser.parse_args()
     
@@ -322,6 +408,7 @@ def main():
     upload_to_huggingface(
         args.dataset_path,
         args.repo_id,
+        args.subdir,
         args.private,
         args.create_pr
     )

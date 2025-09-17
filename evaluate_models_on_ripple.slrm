@@ -30,8 +30,8 @@ pushd $CODE_DIR
 
 
 python scripts/evaluate_multiple_models.py \
-    data/ripple_bench_2025-09-05-bio/ripple_bench_dataset.json \
-    --output-dir results/all_models__duplicated__BIO/ \
+    data/ripple_bench_2025-09-12-bio/ripple_bench_dataset.json \
+    --output-dir results/all_models__duplicated__BIO_9_12/ \
     --model-index $SLURM_ARRAY_TASK_ID \
     --all-checkpoints --discover-cache
 
@@ -39,6 +39,6 @@ python scripts/evaluate_multiple_models.py \
 
 python scripts/evaluate_multiple_models.py \
     data/ripple_bench_2025-09-05-chem/ripple_bench_dataset.json \
-    --output-dir results/all_models__duplicated__CHEM/ \
+    --output-dir results/all_models__duplicated__CHEM_9_12/ \
     --model-index $SLURM_ARRAY_TASK_ID \
     --all-checkpoints --discover-cache

@@ -20,6 +20,7 @@ from huggingface_hub import hf_hub_download
 
 def download_ripple_bench_dataset(
     repo_id: str = "royrin/ripple-bench",
+    subdir: str = None,
     output_dir: str = "data/ripple_bench_datasets",
     dataset_name: str = None,
     force: bool = False
@@ -43,10 +44,39 @@ def download_ripple_bench_dataset(
         return output_file
     
     try:
-        print(f"Downloading Ripple Bench dataset from {repo_id}...")
-        
-        # Load the dataset
-        dataset = load_dataset(repo_id, split="train")
+        if subdir:
+            print(f"Downloading Ripple Bench dataset from {repo_id}/{subdir}...")
+            
+            # Download dataset files from specific subdirectory
+            import tempfile
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_path = Path(temp_dir)
+                
+                # Download train.arrow file
+                train_arrow_path = hf_hub_download(
+                    repo_id=repo_id,
+                    filename=f"{subdir}/train.arrow",
+                    repo_type="dataset",
+                    cache_dir=str(temp_path)
+                )
+                
+                # Download dataset_info.json
+                info_json_path = hf_hub_download(
+                    repo_id=repo_id,
+                    filename=f"{subdir}/dataset_info.json",
+                    repo_type="dataset",
+                    cache_dir=str(temp_path)
+                )
+                
+                # Load dataset from downloaded files
+                from datasets import Dataset
+                dataset = Dataset.from_file(train_arrow_path)
+                
+        else:
+            print(f"Downloading Ripple Bench dataset from {repo_id}...")
+            
+            # Load the dataset from root
+            dataset = load_dataset(repo_id, split="train")
         
         print(f"Downloaded {len(dataset)} questions")
         
@@ -57,11 +87,38 @@ def download_ripple_bench_dataset(
         topics_dict = {}
         for example in dataset:
             topic = example['topic']
+            
+            # Extract distance from original_topics structure
+            distance = 0  # Default distance
+            original_topic = topic  # Default original topic
+            
+            if 'original_topics' in example and example['original_topics']:
+                try:
+                    # original_topics might be a tuple or list
+                    original_topics_data = example['original_topics']
+                    
+                    # If it's a tuple, get the first element (which should be a list)
+                    if isinstance(original_topics_data, tuple):
+                        original_topics_list = original_topics_data[0]
+                    else:
+                        original_topics_list = original_topics_data
+                    
+                    # If we have a list of original topics, get the first one
+                    if isinstance(original_topics_list, list) and len(original_topics_list) > 0:
+                        first_original = original_topics_list[0]
+                        if isinstance(first_original, dict):
+                            distance = first_original.get('distance', 0)
+                            original_topic = first_original.get('topic', topic)
+                except (IndexError, KeyError, TypeError) as e:
+                    print(f"Warning: Could not parse original_topics: {e}")
+                    print(f"original_topics type: {type(example['original_topics'])}")
+                    print(f"original_topics value: {example['original_topics']}")
+            
             if topic not in topics_dict:
                 topics_dict[topic] = {
                     'topic': topic,
-                    'distance': example['distance'],
-                    'original_topic': example.get('original_topic', topic),
+                    'distance': distance,
+                    'original_topic': original_topic,
                     'facts': example.get('facts', []),
                     'wiki_url': example.get('wiki_url', ''),
                     'questions': []
@@ -132,6 +189,11 @@ def main():
         description="Download Ripple Bench dataset from Hugging Face Hub"
     )
     parser.add_argument(
+        "subdir",
+        type=str,
+        help="Subdirectory path on Hugging Face (e.g., 'ripple_bench_chem_2025-09-05')"
+    )
+    parser.add_argument(
         "--repo-id",
         type=str,
         default="royrin/ripple-bench",
@@ -140,7 +202,6 @@ def main():
     parser.add_argument(
         "--output-dir",
         type=str,
-        default="data/ripple_bench_datasets",
         help="Output directory for downloaded dataset"
     )
     parser.add_argument(
@@ -167,6 +228,7 @@ def main():
     
     output_file = download_ripple_bench_dataset(
         repo_id=args.repo_id,
+        subdir=args.subdir,
         output_dir=args.output_dir,
         dataset_name=args.output_name,
         force=args.force
