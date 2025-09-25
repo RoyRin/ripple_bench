@@ -78,37 +78,38 @@ def discover_models_from_cache(cache_dir: str) -> Dict[str, str]:
     """Discover LLM-GAT models and base model from the cache directory."""
     cache_path = Path(cache_dir)
     discovered_models = {}
-    
+
     if not cache_path.exists():
         print(f"Cache directory {cache_dir} does not exist")
         return discovered_models
-    
+
     # Add base model first (index 0)
     base_model_path = cache_path / "models--meta-llama--Meta-Llama-3-8B-Instruct"
     if base_model_path.exists():
-        discovered_models["Llama-3-8b-Instruct"] = "meta-llama/Meta-Llama-3-8B-Instruct"
+        discovered_models[
+            "Llama-3-8b-Instruct"] = "meta-llama/Meta-Llama-3-8B-Instruct"
         print("Found base model: Llama-3-8b-Instruct")
-    
+
     # Look for models--LLM-GAT--* directories
     for model_dir in cache_path.glob("models--LLM-GAT--*"):
         # Extract model name from directory name
         # Format: models--LLM-GAT--llama-3-8b-instruct-elm-checkpoint-1
         model_name = model_dir.name.replace("models--LLM-GAT--", "")
-        
+
         # Convert to HuggingFace model ID format
         # llama-3-8b-instruct-elm-checkpoint-1 -> LLM-GAT/llama-3-8b-instruct-elm-checkpoint-1
         model_id = f"LLM-GAT/{model_name}"
-        
+
         # Create a clean display name
         # Remove checkpoint number for cleaner naming
         display_name = model_name.replace("-checkpoint-", "-ckpt")
-        
+
         discovered_models[display_name] = model_id
-    
+
     print(f"Discovered {len(discovered_models)} models from cache:")
     for i, name in enumerate(sorted(discovered_models.keys())):
         print(f"  - {i}: {name}")
-    
+
     return discovered_models
 
 
@@ -218,9 +219,40 @@ def evaluate_single_model(model_name: str,
 
         # Evaluate
         results = []
+
+        # Cache for storing results by assigned_question_id
+        question_cache = {}
+        cache_hits = 0
+        cache_misses = 0
+
         for i, q in enumerate(tqdm(questions,
                                    desc=f"Evaluating {model_name}")):
             try:
+                assigned_id = q.get('assigned_question_id', None)
+
+                # Check if we've already evaluated this question
+                if assigned_id is not None and assigned_id in question_cache:
+                    # Reuse cached result
+                    cached_response, cached_is_correct = question_cache[
+                        assigned_id]
+                    result = {
+                        'question_id': i,
+                        'assigned_question_id': assigned_id,
+                        'question': q['question'],
+                        'choices': '|'.join(q['choices']),
+                        'correct_answer': q['answer'],
+                        'model_response': cached_response,
+                        'is_correct': cached_is_correct,
+                        'topic': q.get('topic', 'unknown'),
+                        'distance': q.get('distance', -1),
+                        'model_name': model_name
+                    }
+                    results.append(result)
+                    cache_hits += 1
+                    continue  # Skip to next question
+
+                cache_misses += 1
+
                 # Ensure choices is a list
                 choices = q.get('choices', [])
                 if not isinstance(choices, list):
@@ -266,17 +298,32 @@ Answer:
                 # Check if correct
                 is_correct = response == q['answer']
 
+                # Store in cache if we have an assigned_id
+                if assigned_id is not None:
+                    question_cache[assigned_id] = (response, is_correct)
+
                 # Store result
                 result = {
-                    'question_id': i,
-                    'question': q['question'],
-                    'choices': '|'.join(q['choices']),
-                    'correct_answer': q['answer'],
-                    'model_response': response,
-                    'is_correct': is_correct,
-                    'topic': q.get('topic', 'unknown'),
-                    'distance': q.get('distance', -1),
-                    'model_name': model_name
+                    'question_id':
+                    i,
+                    'assigned_question_id':
+                    assigned_id if assigned_id is not None else i,
+                    'question':
+                    q['question'],
+                    'choices':
+                    '|'.join(q['choices']),
+                    'correct_answer':
+                    q['answer'],
+                    'model_response':
+                    response,
+                    'is_correct':
+                    is_correct,
+                    'topic':
+                    q.get('topic', 'unknown'),
+                    'distance':
+                    q.get('distance', -1),
+                    'model_name':
+                    model_name
                 }
                 results.append(result)
 
@@ -318,14 +365,38 @@ Answer:
         print(f"Accuracy: {accuracy:.2%} ({correct}/{total})")
         print(f"Results saved to: {output_csv}")
 
+        # Print cache statistics
+        print(f"\nCache Statistics:")
+        print(f"  Cache hits: {cache_hits:,}")
+        print(f"  Cache misses: {cache_misses:,}")
+        if cache_hits + cache_misses > 0:
+            cache_rate = cache_hits / (cache_hits + cache_misses) * 100
+            print(f"  Cache hit rate: {cache_rate:.1f}%")
+            print(
+                f"  Speedup factor: ~{(cache_hits + cache_misses) / max(cache_misses, 1):.1f}x"
+            )
+
         # Save summary
         summary = {
-            'model_name': model_name,
-            'model_id': model_id,
-            'total_questions': total,
-            'correct': int(correct),
-            'accuracy': float(accuracy),
-            'output_csv': str(output_csv)
+            'model_name':
+            model_name,
+            'model_id':
+            model_id,
+            'total_questions':
+            total,
+            'correct':
+            int(correct),
+            'accuracy':
+            float(accuracy),
+            'cache_hits':
+            cache_hits,
+            'cache_misses':
+            cache_misses,
+            'cache_hit_rate':
+            cache_hits / (cache_hits + cache_misses) if
+            (cache_hits + cache_misses) > 0 else 0,
+            'output_csv':
+            str(output_csv)
         }
 
         summary_path = output_csv.with_suffix('.summary.json')
@@ -434,7 +505,7 @@ def main():
         if not discovered_models:
             print("No LLM-GAT models found in cache directory")
             return
-        
+
         if args.model_index is not None:
             # Use model index for SLURM array jobs
             model_list = list(discovered_models.keys())
@@ -444,9 +515,14 @@ def main():
                 )
             selected_model = model_list[args.model_index]
             base_models = {selected_model: discovered_models[selected_model]}
-            print(f"Selected model at index {args.model_index}: {selected_model}")
+            print(
+                f"Selected model at index {args.model_index}: {selected_model}"
+            )
         elif args.models:
-            base_models = {k: v for k, v in discovered_models.items() if k in args.models}
+            base_models = {
+                k: v
+                for k, v in discovered_models.items() if k in args.models
+            }
         else:
             base_models = discovered_models.copy()
     else:
@@ -460,7 +536,9 @@ def main():
                 )
             selected_model = model_list[args.model_index]
             base_models = {selected_model: MODELS[selected_model]}
-            print(f"Selected model at index {args.model_index}: {selected_model}")
+            print(
+                f"Selected model at index {args.model_index}: {selected_model}"
+            )
         elif args.models:
             base_models = {k: v for k, v in MODELS.items() if k in args.models}
         else:

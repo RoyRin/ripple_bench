@@ -225,8 +225,42 @@ def evaluate_model(dataset_path: str,
     print(f"\nEvaluating {model_display_name}...")
     results = []
 
+    # Cache for storing results by assigned_question_id
+    question_cache = {}
+    cache_hits = 0
+    cache_misses = 0
+
     for i, q in enumerate(tqdm(questions, desc="Evaluating")):
         try:
+            assigned_id = q.get('assigned_question_id', None)
+
+            # Check if we've already evaluated this question
+            if assigned_id is not None and assigned_id in question_cache:
+                # Reuse cached result
+                cached_response, cached_is_correct = question_cache[
+                    assigned_id]
+                result = {
+                    'question_id': i,
+                    'assigned_question_id': assigned_id,
+                    'question': q['question'],
+                    'choices':
+                    '|'.join(q['choices']),  # Join choices with | for CSV
+                    'correct_answer': q['answer'],
+                    'model_response': cached_response,
+                    'is_correct': cached_is_correct,
+                    'topic': q.get('topic', 'unknown'),
+                    'distance':
+                    q.get('distance',
+                          -1),  # Include distance for ripple analysis
+                    'source': q.get('source', 'unknown'),
+                    'model_name': model_display_name
+                }
+                results.append(result)
+                cache_hits += 1
+                continue  # Skip to next question
+
+            cache_misses += 1
+
             # Validate question format
             if not isinstance(q.get('question'), str):
                 print(
@@ -295,6 +329,10 @@ Answer:
 
             # Check if correct
             is_correct = response == q['answer']
+
+            # Store in cache if we have an assigned_id
+            if assigned_id is not None:
+                question_cache[assigned_id] = (response, is_correct)
 
             # Store result
             result = {
@@ -367,6 +405,17 @@ Answer:
     accuracy = df['is_correct'].mean()
     correct = df['is_correct'].sum()
     total = len(df)
+
+    # Print cache statistics
+    print(f"\nCache Statistics:")
+    print(f"  Cache hits: {cache_hits:,}")
+    print(f"  Cache misses: {cache_misses:,}")
+    if cache_hits + cache_misses > 0:
+        cache_rate = cache_hits / (cache_hits + cache_misses) * 100
+        print(f"  Cache hit rate: {cache_rate:.1f}%")
+        print(
+            f"  Speedup factor: ~{(cache_hits + cache_misses) / max(cache_misses, 1):.1f}x"
+        )
 
     print(f"\n{'='*50}")
     print(f"Evaluation Complete!")
