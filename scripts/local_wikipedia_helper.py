@@ -40,11 +40,16 @@ class LocalWikipediaHelper:
         """Get Wikipedia article by title, trying various title formats"""
         # List of variations to try
         variations = [
+            title.lower(
+            ),  # Lowercase FIRST (most Wikipedia titles are lowercase)
             title,  # Original
-            title.lower(),  # Lowercase
+            title.lower().replace('_', ' '),  # Lowercase with spaces
             title.replace(' ', '_'),  # With underscores
             title.lower().replace(' ', '_'),  # Lowercase with underscores
-            wiki_clean_title(title),  # Cleaned (removes spaces/dates)
+            title.lower().replace(
+                ' ', '-'),  # Lowercase with hyphens (e.g., yolk-sac)
+            wiki_clean_title(title.lower()),  # Cleaned lowercase
+            wiki_clean_title(title),  # Cleaned original case
             title.replace(' ', ''),  # No spaces
             title.lower().replace(' ', ''),  # Lowercase no spaces
         ]
@@ -66,6 +71,7 @@ class LocalWikipediaHelper:
         path, line_num = self.title_index[title]
 
         try:
+            # The index and read_line_from_file both use 1-based indexing
             data = read_line_from_file(path, line_num)
             return json.loads(data)
         except Exception as e:

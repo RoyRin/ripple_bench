@@ -299,6 +299,9 @@ Answer:
             # Store result
             result = {
                 'question_id': i,
+                'assigned_question_id':
+                q.get('assigned_question_id',
+                      i),  # Use assigned_question_id if available, else use i
                 'question': q['question'],
                 'choices':
                 '|'.join(q['choices']),  # Join choices with | for CSV
@@ -331,6 +334,9 @@ Answer:
             results.append({
                 'question_id':
                 i,
+                'assigned_question_id':
+                q.get('assigned_question_id',
+                      i),  # Use assigned_question_id if available
                 'question':
                 question_text,
                 'choices':

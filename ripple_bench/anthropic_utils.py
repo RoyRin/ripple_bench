@@ -11,6 +11,10 @@ from ripple_bench import SECRET_DIR, BASE_DIR
 # Anthropic API pricing per 1M tokens (as of late 2024)
 ANTHROPIC_PRICING = {
     # Claude 4 models
+    "claude-opus-4-1-20250805": {
+        "input": 15.00,
+        "output": 75.00
+    },  # Claude 4.1 Opus
     "claude-opus-4-20250514": {
         "input": 15.00,
         "output": 75.00
@@ -23,16 +27,20 @@ ANTHROPIC_PRICING = {
     "claude-3-5-sonnet-20241022": {
         "input": 3.00,
         "output": 15.00
-    },
+    },  # Claude 3.7 Sonnet
     "claude-3-5-sonnet-20240620": {
         "input": 3.00,
         "output": 15.00
-    },
+    },  # Claude 3.5 Sonnet (deprecated)
+    "claude-3-5-haiku-20241022": {
+        "input": 0.80,
+        "output": 4.00
+    },  # Claude 3.5 Haiku
     # Claude 3 models
     "claude-3-opus-20240229": {
         "input": 15.00,
         "output": 75.00
-    },
+    },  # Claude 3 Opus (deprecated)
     "claude-3-sonnet-20240229": {
         "input": 3.00,
         "output": 15.00
@@ -40,8 +48,8 @@ ANTHROPIC_PRICING = {
     "claude-3-haiku-20240307": {
         "input": 0.25,
         "output": 1.25
-    },
-    # Claude 2 models
+    },  # Claude 3 Haiku
+    # Claude 2 models (legacy)
     "claude-2.1": {
         "input": 8.00,
         "output": 24.00

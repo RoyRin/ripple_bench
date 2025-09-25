@@ -32,7 +32,7 @@ class PromptedBGE(HuggingFaceEmbeddings):
 BAAI_embedding = PromptedBGE(model_name="BAAI/bge-base-en")  # or bge-large-en
 
 # Check for environment variable or use default
-DEFAULT_FAISS_PATH = "/Users/roy/data/wikipedia/hugging_face/faiss_index__top_1000000__2025-04-11"
+DEFAULT_FAISS_PATH = "/Users/roy/data/wikipedia/hugging_face/faiss_index__top_1000000__2025-07-12"
 faiss_base_path = os.environ.get('WIKI_FAISS_PATH', DEFAULT_FAISS_PATH)
 
 data_cache = Path(

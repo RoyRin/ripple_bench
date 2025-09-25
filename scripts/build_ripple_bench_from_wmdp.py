@@ -93,7 +93,8 @@ class RippleBenchBuilder:
     def extract_topics_from_questions(self,
                                       questions: List[Dict],
                                       num_samples: int = None,
-                                      cache_file: str = None) -> pd.DataFrame:
+                                      cache_file: str = None,
+                                      max_workers: int = 1) -> pd.DataFrame:
         """Extract topics from WMDP questions using LLM."""
         print("Extracting topics from questions...")
 
@@ -126,20 +127,31 @@ class RippleBenchBuilder:
             start_idx = 0
 
         # Process remaining questions
-        for i, q in enumerate(tqdm(questions[start_idx:], initial=start_idx)):
-            question_text = q['question']
-            topic = self._extract_topic(question_text)
-            topics.append({
-                'question': question_text,
-                'topic': topic,
-                'answer': q['answer'],
-                'choices': q['choices'],
-                'original_index': start_idx + i
-            })
+        remaining_questions = [(start_idx + i, q)
+                               for i, q in enumerate(questions[start_idx:])]
 
-            # Save intermediate results
-            if (start_idx + i + 1) % 5 == 0:
-                save_dict(topics, temp_file)
+        if max_workers > 1 and remaining_questions:
+            print(f"Using {max_workers} parallel workers for topic extraction")
+            new_topics = self._extract_topics_parallel(remaining_questions,
+                                                       max_workers, temp_file)
+            topics.extend(new_topics)
+        else:
+            # Sequential processing
+            for i, q in enumerate(
+                    tqdm(questions[start_idx:], initial=start_idx)):
+                question_text = q['question']
+                topic = self._extract_topic(question_text)
+                topics.append({
+                    'question': question_text,
+                    'topic': topic,
+                    'answer': q['answer'],
+                    'choices': q['choices'],
+                    'original_index': start_idx + i
+                })
+
+                # Save intermediate results
+                if (start_idx + i + 1) % 5 == 0:
+                    save_dict(topics, temp_file)
 
         df = pd.DataFrame(topics)
 
@@ -187,6 +199,62 @@ Topic:'''
                 return word
 
         return "General Knowledge"
+
+    def _process_single_question(self, idx_and_question: Tuple[int,
+                                                               Dict]) -> Dict:
+        """Process a single question for topic extraction - designed for parallel execution"""
+        idx, q = idx_and_question
+        question_text = q['question']
+        topic = self._extract_topic(question_text)
+
+        return {
+            'question': question_text,
+            'topic': topic,
+            'answer': q['answer'],
+            'choices': q['choices'],
+            'original_index': idx
+        }
+
+    def _extract_topics_parallel(self,
+                                 questions_with_indices: List[Tuple[int,
+                                                                    Dict]],
+                                 max_workers: int,
+                                 temp_file: Path) -> List[Dict]:
+        """Extract topics in parallel using ThreadPoolExecutor"""
+        all_topics = []
+
+        # Use ThreadPoolExecutor for I/O-bound tasks
+        with concurrent.futures.ThreadPoolExecutor(
+                max_workers=max_workers) as executor:
+            # Submit all tasks
+            future_to_idx = {
+                executor.submit(self._process_single_question, (idx, q)): idx
+                for idx, q in questions_with_indices
+            }
+
+            # Process completed tasks with progress bar
+            with tqdm(total=len(questions_with_indices),
+                      desc="Extracting topics") as pbar:
+                for future in concurrent.futures.as_completed(future_to_idx):
+                    try:
+                        topic_result = future.result()
+                        all_topics.append(topic_result)
+                        pbar.update(1)
+
+                        # Save intermediate results periodically
+                        if len(all_topics) % 20 == 0:
+                            # Sort by original_index before saving
+                            sorted_topics = sorted(
+                                all_topics, key=lambda x: x['original_index'])
+                            save_dict(sorted_topics, temp_file)
+
+                    except Exception as e:
+                        idx = future_to_idx[future]
+                        print(f"  ❌ Error processing question {idx}: {e}")
+                        pbar.update(1)
+
+        # Sort by original_index to maintain order
+        return sorted(all_topics, key=lambda x: x['original_index'])
 
     def _extract_facts_via_api(self, content: str, topic: str) -> str:
         """Extract facts from Wikipedia content using LLM API."""
@@ -262,12 +330,31 @@ Please format your response as a bulleted list using "•" symbols.'''
                         f"  📁 LOCAL: Retrieved '{page_title}' for topic '{topic}'"
                     )
                 else:
-                    return topic, {
-                        'facts':
-                        f"Article not found in local Wikipedia: {topic}",
-                        'url': None,
-                        'title': topic
-                    }
+                    # Fall back to online Wikipedia API
+                    print(
+                        f"  ⚠ LOCAL: Not found locally, trying online API for: {topic}"
+                    )
+                    try:
+                        # Import wikipedia if not already available
+                        if wikipedia is None:
+                            import wikipedia as wiki_module
+                            wikipedia = wiki_module
+
+                        page = wikipedia.page(topic)
+                        content = page.content[:self.wiki_content_size]
+                        page_title = page.title
+                        page_url = page.url
+                        print(f"  ✓ API: Found online: {topic}")
+                    except Exception as api_error:
+                        print(
+                            f"  ❌ API: Also failed online: {topic} - {str(api_error)[:50]}"
+                        )
+                        return topic, {
+                            'facts':
+                            f"Article not found in local Wikipedia or online: {topic}",
+                            'url': None,
+                            'title': topic
+                        }
             else:
                 # Use online Wikipedia
                 print(f"  🌐 API: Fetching '{topic}'...")
@@ -702,14 +789,31 @@ Only return the JSON list, no other text."""
                                 f"  📁 LOCAL: Retrieved '{page_title}' for topic '{topic}'"
                             )
                         else:
-                            facts_dict[topic] = {
-                                'facts':
-                                f"Article not found in local Wikipedia: {topic}",
-                                'url': None,
-                                'title': topic
-                            }
-                            print(f"  ❌ LOCAL: Not found '{topic}'")
-                            continue
+                            # Fall back to online Wikipedia API
+                            print(
+                                f"  ⚠ LOCAL: Not found locally, trying online API for: {topic}"
+                            )
+                            try:
+                                # Import wikipedia if not already imported
+                                if 'wikipedia' not in locals():
+                                    import wikipedia
+
+                                page = wikipedia.page(topic)
+                                content = page.content[:self.wiki_content_size]
+                                page_title = page.title
+                                page_url = page.url
+                                print(f"  ✓ API: Found online: {topic}")
+                            except Exception as api_error:
+                                print(
+                                    f"  ❌ API: Also failed online: {topic} - {str(api_error)[:50]}"
+                                )
+                                facts_dict[topic] = {
+                                    'facts':
+                                    f"Article not found in local Wikipedia or online: {topic}",
+                                    'url': None,
+                                    'title': topic
+                                }
+                                continue
                     else:
                         # Use online Wikipedia
                         print(f"  🌐 API: Fetching '{topic}'...")
@@ -949,6 +1053,14 @@ Only return the JSON list, no other text."""
         # Deduplicate questions before saving
         all_questions = self._validate_and_deduplicate_questions(all_questions)
 
+        # Add assigned_question_id to each question
+        for i, question in enumerate(all_questions):
+            question['assigned_question_id'] = i
+
+        print(
+            f"Added assigned_question_id to {len(all_questions)} questions (IDs: 0-{len(all_questions)-1})"
+        )
+
         # Save final results
         save_dict(all_questions, final_file)
 
@@ -962,7 +1074,11 @@ Only return the JSON list, no other text."""
     def _organize_by_distance(self, topics_df, topic_to_neighbors, facts_dict,
                               questions):
         """Organize dataset by semantic distance from original topics."""
-        # Group questions by topic
+        # First, create a mapping from question_id to original_topic and distance
+        question_id_to_original = {}
+        question_id_to_distance = {}
+
+        # Group questions by topic for easier processing
         questions_by_topic = {}
         for q in questions:
             topic = q['topic']
@@ -972,6 +1088,46 @@ Only return the JSON list, no other text."""
 
         # Get original topics
         original_topics = set(topics_df['topic'].unique())
+
+        # Process original topics (distance 0)
+        for topic in original_topics:
+            if topic in questions_by_topic:
+                for q in questions_by_topic[topic]:
+                    qid = q.get('assigned_question_id')
+                    if qid is not None:
+                        question_id_to_original[qid] = topic
+                        question_id_to_distance[qid] = 0
+
+        # Process neighbor topics (distance 1+)
+        for original_topic, neighbors in topic_to_neighbors.items():
+            for i, neighbor_topic in enumerate(neighbors):
+                # Skip if it's an original topic (already processed)
+                if neighbor_topic in original_topics:
+                    continue
+
+                if neighbor_topic in questions_by_topic:
+                    for q in questions_by_topic[neighbor_topic]:
+                        qid = q.get('assigned_question_id')
+                        if qid is not None:
+                            # Only set if not already set (in case of duplicates, first wins)
+                            if qid not in question_id_to_original:
+                                question_id_to_original[qid] = original_topic
+                                question_id_to_distance[qid] = i + 1
+
+        # Add original_topic and distance to each question
+        for q in questions:
+            qid = q.get('assigned_question_id')
+            if qid is not None and qid in question_id_to_original:
+                q['original_topic'] = question_id_to_original[qid]
+                q['distance'] = question_id_to_distance[qid]
+            else:
+                # Fallback if question_id not found
+                topic = q.get('topic')
+                q['original_topic'] = topic if topic in original_topics else 'unknown'
+                q['distance'] = 0 if topic in original_topics else -1
+
+        print(
+            f"Added original_topic and distance to {len(questions)} questions")
 
         # Organize topics by distance
         topics_list = []
@@ -1066,7 +1222,10 @@ Only return the JSON list, no other text."""
 
         # Step 2: Extract topics
         topics_df = self.extract_topics_from_questions(
-            wmdp_questions, num_samples, cache_file=cache_files.get('topics'))
+            wmdp_questions,
+            num_samples,
+            cache_file=cache_files.get('topics'),
+            max_workers=max_workers)
         print(f"Extracted {len(topics_df)} topics")
 
         # Step 3: Generate ordered topic lists
@@ -1259,7 +1418,7 @@ def main():
     )
     if args.max_workers > 1:
         print(
-            f"Parallel processing: {args.max_workers} workers for fact extraction"
+            f"Parallel processing: {args.max_workers} workers for topic/fact/question extraction"
         )
 
     dataset = builder.build_dataset(
