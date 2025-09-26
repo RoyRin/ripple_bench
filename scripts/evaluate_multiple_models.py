@@ -221,6 +221,7 @@ def evaluate_single_model(model_name: str,
         results = []
 
         # Cache for storing results by assigned_question_id
+        # This avoids re-running the model but still saves every entry
         question_cache = {}
         cache_hits = 0
         cache_misses = 0
@@ -232,15 +233,12 @@ def evaluate_single_model(model_name: str,
 
                 # Check if we've already evaluated this question
                 if assigned_id is not None and assigned_id in question_cache:
-                    # Reuse cached result
+                    # Reuse cached result but still create a full result entry
                     cached_response, cached_is_correct = question_cache[
                         assigned_id]
                     result = {
                         'question_id': i,
                         'assigned_question_id': assigned_id,
-                        'question': q['question'],
-                        'choices': '|'.join(q['choices']),
-                        'correct_answer': q['answer'],
                         'model_response': cached_response,
                         'is_correct': cached_is_correct,
                         'topic': q.get('topic', 'unknown'),
@@ -298,7 +296,7 @@ Answer:
                 # Check if correct
                 is_correct = response == q['answer']
 
-                # Store in cache if we have an assigned_id
+                # Store in cache for reuse
                 if assigned_id is not None:
                     question_cache[assigned_id] = (response, is_correct)
 
@@ -308,12 +306,6 @@ Answer:
                     i,
                     'assigned_question_id':
                     assigned_id if assigned_id is not None else i,
-                    'question':
-                    q['question'],
-                    'choices':
-                    '|'.join(q['choices']),
-                    'correct_answer':
-                    q['answer'],
                     'model_response':
                     response,
                     'is_correct':
@@ -332,12 +324,8 @@ Answer:
                 results.append({
                     'question_id':
                     i,
-                    'question':
-                    str(q.get('question', '')),
-                    'choices':
-                    '|'.join(str(c) for c in q.get('choices', [])),
-                    'correct_answer':
-                    str(q.get('answer', '')),
+                    'assigned_question_id':
+                    q.get('assigned_question_id', i),
                     'model_response':
                     'ERROR',
                     'is_correct':

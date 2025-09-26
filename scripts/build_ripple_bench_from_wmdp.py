@@ -524,13 +524,17 @@ Only return the JSON list, no other text."""
             print(f"Error generating questions for {topic}: {e}")
             return []
 
-    def _generate_questions_parallel(self, remaining_topics: List[Tuple[str,
-                                                                        Dict]],
-                                     questions_per_topic: int,
-                                     max_workers: int,
-                                     temp_file: Path) -> List[Dict]:
+    def _generate_questions_parallel(
+            self,
+            remaining_topics: List[Tuple[str, Dict]],
+            questions_per_topic: int,
+            max_workers: int,
+            temp_file: Path,
+            existing_questions: List[Dict] = None) -> List[Dict]:
         """Generate questions in parallel using ThreadPoolExecutor"""
-        all_questions = []
+        # Start with existing questions if provided
+        all_questions = existing_questions if existing_questions is not None else []
+        new_questions_count = 0
 
         # Create a partial function with fixed parameters
         process_func = partial(self._generate_questions_for_topic,
@@ -574,10 +578,11 @@ Only return the JSON list, no other text."""
                                         f"   Q{i+1}: {q['question'][:60]}...")
 
                         all_questions.extend(questions)
+                        new_questions_count += len(questions)
                         pbar.update(1)
 
-                        # Save intermediate results periodically
-                        if len(all_questions) % 50 == 0:
+                        # Save intermediate results periodically (based on new questions added)
+                        if new_questions_count > 0 and new_questions_count % 50 == 0:
                             save_dict(all_questions, temp_file)
 
                     except Exception as e:
@@ -968,9 +973,12 @@ Only return the JSON list, no other text."""
             print(
                 f"Using {max_workers} parallel workers for question generation"
             )
+            # Pass existing questions to parallel function to preserve them
             questions_from_parallel = self._generate_questions_parallel(
-                remaining_topics, questions_per_topic, max_workers, temp_file)
-            all_questions.extend(questions_from_parallel)
+                remaining_topics, questions_per_topic, max_workers, temp_file,
+                all_questions)
+            # Replace all_questions with the combined result
+            all_questions = questions_from_parallel
         else:
             # Sequential processing
             topic_count = 0

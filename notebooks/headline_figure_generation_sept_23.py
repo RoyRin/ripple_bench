@@ -20,6 +20,9 @@ bio_results_path = Path(
 bio_results_path = Path(
     "/Users/roy/data/ripple_bench/9_05_2025/results/all_models__duplicated__BIO_9_12_filtered_20250924_145547"
 )
+bio_results_path = Path(
+    "/Users/roy/data/ripple_bench/9_25_2025/results/all_models__duplicated__BIO_9_24"
+)
 
 wmdp_chem_path = Path(
     "/Users/roy/data/ripple_bench/9_05_2025/data/wmdp/wmdp-chem.json")
