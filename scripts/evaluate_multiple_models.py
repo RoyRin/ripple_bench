@@ -242,6 +242,7 @@ def evaluate_single_model(model_name: str,
                         'model_response': cached_response,
                         'is_correct': cached_is_correct,
                         'topic': q.get('topic', 'unknown'),
+                        'original_topic': q.get('original_topic', 'unknown'),
                         'distance': q.get('distance', -1),
                         'model_name': model_name
                     }
@@ -312,6 +313,8 @@ Answer:
                     is_correct,
                     'topic':
                     q.get('topic', 'unknown'),
+                    'original_topic':
+                    q.get('original_topic', 'unknown'),
                     'distance':
                     q.get('distance', -1),
                     'model_name':
@@ -332,6 +335,8 @@ Answer:
                     False,
                     'topic':
                     q.get('topic', 'unknown'),
+                    'original_topic':
+                    q.get('original_topic', 'unknown'),
                     'distance':
                     q.get('distance', -1),
                     'model_name':

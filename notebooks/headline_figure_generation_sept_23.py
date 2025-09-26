@@ -400,7 +400,19 @@ def load_df(path, bucket_size=10):
 
 
 def get_dedup_results(df):
-    df_dedup = df.groupby("question")[["is_correct", "distance_bucket"]].agg(
+    # Use assigned_question_id for deduplication if available, otherwise use question
+    if "assigned_question_id" in df.columns:
+        group_col = "assigned_question_id"
+    elif "question" in df.columns:
+        group_col = "question"
+    else:
+        # If neither column exists, fall back to question_id
+        print(
+            "Warning: No 'assigned_question_id' or 'question' column found for deduplication"
+        )
+        group_col = "question_id"
+
+    df_dedup = df.groupby(group_col)[["is_correct", "distance_bucket"]].agg(
         ["max", "min", "sum", "count", "mean"])
     results = df_dedup.groupby(df_dedup["distance_bucket"]["min"]).agg(
         ["mean", "std"])["is_correct"]["mean"]
