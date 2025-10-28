@@ -218,7 +218,9 @@ def load_ripple_bench_results(
     # Count files first
     all_files = list(directory.iterdir())
     csv_files = [
-        f for f in all_files if f.name.endswith('_ripple_results.csv')
+        f for f in all_files
+        if (f.name.endswith('_ripple_results.csv')
+            or f.name.endswith('_ripple_results_filtered.csv'))
     ]
     json_files = [
         f for f in all_files if f.name.endswith('_ripple_results.summary.json')
@@ -251,8 +253,11 @@ def load_ripple_bench_results(
             filename = file_path.name
 
             # Extract model name and checkpoint
-            if filename.endswith('_ripple_results.csv'):
-                base_name = filename.replace('_ripple_results.csv', '')
+            if filename.endswith('_ripple_results.csv') or filename.endswith(
+                    '_ripple_results_filtered.csv'):
+                base_name = filename.replace('_ripple_results_filtered.csv',
+                                             '').replace(
+                                                 '_ripple_results.csv', '')
 
                 # Check if this is a base model (starts with capital L) or has checkpoint
                 if base_name.startswith('Llama'):
@@ -427,6 +432,44 @@ def get_legacy_results(df):
     raw_results["sem"] = raw_results["std"] / np.sqrt(
         df.groupby("distance_bucket").size())
     return raw_results
+
+
+def apply_rolling_average(results, window_size=10):
+    """
+    Apply rolling average to results DataFrame.
+
+    Args:
+        results: DataFrame with 'mean', 'std', 'sem' columns
+        window_size: Size of the rolling window
+
+    Returns:
+        DataFrame with smoothed values
+    """
+    if window_size <= 1:
+        return results
+
+    # Create a copy to avoid modifying original
+    smoothed = results.copy()
+
+    # Apply rolling average to mean values
+    smoothed['mean'] = results['mean'].rolling(
+        window=window_size,
+        center=True,  # Center the window
+        min_periods=1  # Use available data at edges
+    ).mean()
+
+    # Also smooth the std and sem for consistency
+    if 'std' in results.columns:
+        smoothed['std'] = results['std'].rolling(window=window_size,
+                                                 center=True,
+                                                 min_periods=1).mean()
+
+    if 'sem' in results.columns:
+        smoothed['sem'] = results['sem'].rolling(window=window_size,
+                                                 center=True,
+                                                 min_periods=1).mean()
+
+    return smoothed
 
 
 def draw_from_data(base_models: Dict[str, pd.DataFrame],
@@ -1164,6 +1207,179 @@ def plot_checkpoint_progression(
     plt.show()
 
 
+def plot_delta_from_baseline(
+        base_models: Dict[str, pd.DataFrame],
+        unlearning_results: Dict[str, Dict[str, Dict[str, pd.DataFrame]]],
+        checkpoint: str = 'ckpt8',
+        results_fn=None,
+        save_plots: bool = True,
+        dataset: str = 'bio',
+        show_plots: bool = False,
+        apply_average: bool = False,
+        window_size: int = 10):
+    """
+    Plot the delta (difference) between baseline and checkpoint for each method.
+    Positive values indicate performance improvement over baseline.
+
+    Args:
+        base_models: Dictionary of base model DataFrames
+        unlearning_results: Nested dict of unlearning results
+        checkpoint: Which checkpoint to use (default: 'ckpt8')
+        results_fn: Function to process results
+        save_plots: Whether to save plots
+        dataset: Dataset name for filename
+        show_plots: Whether to display plots
+        apply_average: Whether to apply rolling average
+        window_size: Window size for rolling average
+    """
+    if results_fn is None:
+        results_fn = get_legacy_results
+
+    print(f"\nGenerating delta plots (baseline - {checkpoint})...")
+    print(f"Base models available: {list(base_models.keys())}")
+    print(f"Unlearning results available: {list(unlearning_results.keys())}")
+
+    # Create figure with single plot
+    fig, ax = plt.subplots(figsize=(12, 8))
+
+    # Find the base model (Llama or Zephyr)
+    base_df = None
+    base_model_display = None
+    for bm_name, bm_df in base_models.items():
+        if 'Llama' in bm_name or 'zephyr' in bm_name.lower():
+            base_df = process_df(bm_df)
+            base_model_display = bm_name
+            break
+
+    if base_df is None:
+        print("No base model found")
+        return fig
+
+    # Get base results (this is our baseline)
+    base_results = results_fn(base_df)
+    print(f"Base model {base_model_display} shape: {base_results.shape}")
+
+    # Find unlearning results
+    if len(unlearning_results) == 0:
+        print("No unlearning results found")
+        return fig
+
+    # Get the first (and likely only) set of unlearning results
+    um_name, methods = next(iter(unlearning_results.items()))
+    print(f"Found unlearning methods under key '{um_name}'")
+
+    # Plot delta for each method
+    for method_name, checkpoints in methods.items():
+        print(f"\n  Processing method: {method_name}")
+        print(f"    Available checkpoints: {list(checkpoints.keys())}")
+
+        # Get the specified checkpoint
+        ckpt_key = None
+        for key in checkpoints.keys():
+            if checkpoint in key:
+                ckpt_key = key
+                break
+
+        if not ckpt_key:
+            print(f"    No {checkpoint} found for {method_name}")
+            continue
+
+        # Process checkpoint data
+        ckpt_df = process_df(checkpoints[ckpt_key])
+        ckpt_results = results_fn(ckpt_df)
+        print(f"    Checkpoint {ckpt_key} shape: {ckpt_results.shape}")
+
+        # Ensure both results are aligned by index
+        # Use common indices between base model (baseline) and checkpoint
+        common_idx = base_results.index.intersection(ckpt_results.index)
+        baseline_aligned = base_results.loc[common_idx]
+        ckpt_aligned = ckpt_results.loc[common_idx]
+
+        print(f"    Common distances: {len(common_idx)}")
+        if len(common_idx) == 0:
+            print(
+                f"    WARNING: No common indices between base model and {checkpoint}"
+            )
+            continue
+
+        print(
+            f"    Sample baseline values: {baseline_aligned['mean'].iloc[:5].tolist()}"
+        )
+        print(
+            f"    Sample checkpoint values: {ckpt_aligned['mean'].iloc[:5].tolist()}"
+        )
+
+        # Calculate delta (baseline - checkpoint)
+        # Positive means checkpoint has lower accuracy than baseline (more unlearning)
+        delta = (baseline_aligned['mean'] - ckpt_aligned['mean']) * 100
+        print(f"    Delta range: {delta.min():.2f} to {delta.max():.2f}")
+        print(f"    Sample delta values: {delta.iloc[:5].tolist()}")
+
+        # Apply rolling average if requested
+        if apply_average:
+            delta = delta.rolling(window=window_size,
+                                  center=True,
+                                  min_periods=1).mean()
+
+        # Plot delta
+        color = METHOD_COLORS.get(method_name, '#888888')
+        print(f"    Plotting with color {color}")
+        line = ax.plot(common_idx,
+                       delta,
+                       label=f'{method_name.upper()}',
+                       color=color,
+                       linewidth=2.5,
+                       marker='o',
+                       markersize=3,
+                       markevery=5,
+                       alpha=0.8)
+        print(f"    Line plotted: {line}")
+
+    # Add zero line
+    ax.axhline(y=0, color='black', linestyle='--', alpha=0.5, linewidth=1)
+
+    # Formatting
+    ax.set_xlabel('Semantic Distance', fontsize=14)
+    ax.set_ylabel('Δ Accuracy (%)', fontsize=14)
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc='best', fontsize=12)
+
+    # Debug axes limits
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+    print(f"\n  Axes limits: X={xlim}, Y={ylim}")
+
+    plt.tight_layout()
+
+    # Save plots
+    if save_plots:
+        date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
+        PLOT_DIR = Path("plots") / f"delta_{dataset}_{date_str}"
+        PLOT_DIR.mkdir(parents=True, exist_ok=True)
+
+        png_dir = PLOT_DIR / "PNG"
+        pdf_dir = PLOT_DIR / "PDF"
+        png_dir.mkdir(exist_ok=True)
+        pdf_dir.mkdir(exist_ok=True)
+
+        fn = f"delta_{checkpoint}_{dataset}"
+        if apply_average:
+            fn += f"_smooth{window_size}"
+
+        png_path = png_dir / f"{fn}.png"
+        pdf_path = pdf_dir / f"{fn}.pdf"
+        plt.savefig(png_path, dpi=150, bbox_inches='tight')
+        plt.savefig(pdf_path, bbox_inches='tight')
+        print(f"Saved delta plot to: PNG/{fn}.png and PDF/{fn}.pdf")
+
+    if show_plots:
+        plt.show()
+    else:
+        plt.close()
+
+    return fig
+
+
 def plot_method_comparison(base_models: Dict[str, pd.DataFrame],
                            unlearning_results: Dict[str,
                                                     Dict[str,
@@ -1881,7 +2097,9 @@ def main(results_dir: str = None,
          results_fn_name: str = 'legacy',
          show_plots: bool = False,
          show_wmdp: bool = False,
-         filter_path: Optional[str] = None):
+         filter_path: Optional[str] = None,
+         apply_average: bool = False,
+         window_size: int = 10):
     """
     Main function to load data and generate plots.
 
@@ -1915,9 +2133,21 @@ def main(results_dir: str = None,
 
     # Load data
     print(f"Loading data from {results_dir}")
-    # If we're doing a combined plot with a specific checkpoint, only load that checkpoint
+    # Optimize loading based on plot type
     checkpoint_filter_to_use = None
-    if plot_type == 'combined' and checkpoint_selector not in ['best', 'last']:
+
+    if plot_type == 'delta':
+        # For delta plots, we need baseline and specific checkpoint
+        # Load only the checkpoint we need (baseline is always loaded)
+        if checkpoint_selector not in ['best', 'last', 'all']:
+            checkpoint_filter_to_use = checkpoint_selector
+            print(f"Loading baseline and {checkpoint_selector} for delta plot")
+        else:
+            checkpoint_filter_to_use = 'ckpt8'  # Default to ckpt8 for delta
+            print(f"Loading baseline and ckpt8 for delta plot")
+    elif plot_type == 'combined' and checkpoint_selector not in [
+            'best', 'last'
+    ]:
         checkpoint_filter_to_use = checkpoint_selector
         print(f"Filtering to only load checkpoint: {checkpoint_filter_to_use}")
 
@@ -1947,9 +2177,20 @@ def main(results_dir: str = None,
 
     # Select results function
     if results_fn_name == 'dedup':
-        results_fn = get_dedup_results
+        base_results_fn = get_dedup_results
     else:
-        results_fn = get_legacy_results
+        base_results_fn = get_legacy_results
+
+    # Wrap with rolling average if requested
+    if apply_average:
+
+        def results_fn(df):
+            results = base_results_fn(df)
+            return apply_rolling_average(results, window_size)
+
+        print(f"Applying rolling average with window size: {window_size}")
+    else:
+        results_fn = base_results_fn
 
     # Generate plots
     if plot_type == 'combined':
@@ -1977,11 +2218,6 @@ def main(results_dir: str = None,
                        dataset=dataset,
                        show_plots=show_plots,
                        show_wmdp_results=show_wmdp)
-
-    elif plot_type == 'delta':
-        print("\nGenerating delta plots...")
-        # TODO: Implement draw_delta_from_data
-        print("Delta plots not yet implemented for new data format")
 
     elif plot_type == 'progression':
         print("\nGenerating checkpoint progression plots for all methods...")
@@ -2014,6 +2250,19 @@ def main(results_dir: str = None,
             save_plots=True,
             dataset=dataset,
             show_plots=show_plots)
+
+    elif plot_type == 'delta':
+        print("\nGenerating delta plots (checkpoint - baseline)...")
+        plot_delta_from_baseline(base_models,
+                                 unlearning_results,
+                                 checkpoint=checkpoint_selector
+                                 if checkpoint_selector != 'best' else 'ckpt8',
+                                 results_fn=results_fn,
+                                 save_plots=True,
+                                 dataset=dataset,
+                                 show_plots=show_plots,
+                                 apply_average=apply_average,
+                                 window_size=window_size)
 
     return csvs, summary_jsons, base_models, unlearning_results
 
@@ -2049,8 +2298,10 @@ if __name__ == "__main__":
                         choices=['legacy', 'dedup'],
                         help='Results processing function')
     parser.add_argument('--dir',
+                        '--results-dir',
                         type=str,
                         default=None,
+                        dest='dir',
                         help='Custom results directory')
     parser.add_argument(
         '--show',
@@ -2064,14 +2315,22 @@ if __name__ == "__main__":
         type=str,
         default=None,
         help='Path to bio_neighbor_quality_results.json for topic filtering')
+    parser.add_argument('--average',
+                        action='store_true',
+                        help='Apply rolling average smoothing to the plots')
+    parser.add_argument('--window',
+                        type=int,
+                        default=10,
+                        help='Window size for rolling average (default: 10)')
 
     args = parser.parse_args()
 
     # Handle 'all' option and convert to list if single value
     plot_types = args.plot
     if 'all' in plot_types:
-        plot_types = ['combined', 'progression', 'distance', 'comparison']
-        # Note: 'grid' and 'delta' excluded as they might not be fully implemented
+        plot_types = [
+            'combined', 'progression', 'distance', 'comparison', 'delta'
+        ]
 
     # Load data once (will be cached for subsequent calls)
     first_run = True
@@ -2089,4 +2348,6 @@ if __name__ == "__main__":
             results_fn_name=args.results_fn,
             show_plots=args.show,
             show_wmdp=args.wmdp if hasattr(args, 'wmdp') else False,
-            filter_path=args.filter)
+            filter_path=args.filter,
+            apply_average=args.average if hasattr(args, 'average') else False,
+            window_size=args.window if hasattr(args, 'window') else 10)
