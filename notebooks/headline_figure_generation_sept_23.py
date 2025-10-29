@@ -481,7 +481,8 @@ def draw_from_data(base_models: Dict[str, pd.DataFrame],
                    save_plots=False,
                    dataset='bio',
                    show_plots=False,
-                   show_wmdp_results=False):
+                   show_wmdp_results=False,
+                   results_dir=None):
     """
     Draw plots comparing base and unlearned models.
 
@@ -653,8 +654,16 @@ def draw_from_data(base_models: Dict[str, pd.DataFrame],
     # Save the plot if requested
     if save_plots:
         date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+        # Extract suffix from results_dir if provided
+        dir_suffix = ""
+        if results_dir:
+            dir_name = Path(results_dir).name
+            dir_suffix = f"__{dir_name}"
+
         PLOT_DIR = Path(
-            "plots") / f"{dataset}_{checkpoint_selector}_{date_str}"
+            "plots"
+        ) / f"{dataset}_{checkpoint_selector}{dir_suffix}_{date_str}"
         PLOT_DIR.mkdir(parents=True, exist_ok=True)
 
         # Create PNG and PDF subdirectories
@@ -793,7 +802,10 @@ def draw_combined_from_data(base_models: Dict[str, pd.DataFrame],
                             save_plots=True,
                             dataset='bio',
                             show_plots=False,
-                            show_wmdp_results=False):
+                            show_wmdp_results=False,
+                            results_dir=None,
+                            apply_average=False,
+                            window_size=10):
     """
     Draw all models on a single combined plot.
 
@@ -805,6 +817,9 @@ def draw_combined_from_data(base_models: Dict[str, pd.DataFrame],
         save_plots: Whether to save plots to files
         dataset: Dataset name for the plot filename
         show_wmdp_results: Whether to show WMDP results as stars at distance 0
+        results_dir: Path to results directory (used for naming output files)
+        apply_average: Whether rolling average was applied
+        window_size: Size of rolling average window
     """
     if results_fn is None:
         results_fn = get_legacy_results
@@ -837,7 +852,23 @@ def draw_combined_from_data(base_models: Dict[str, pd.DataFrame],
 
     # Create date-stamped plot directory
     date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
-    PLOT_DIR = Path("plots") / f"{dataset}_{checkpoint_selector}_{date_str}"
+
+    # Extract suffix from results_dir if provided
+    dir_suffix = ""
+    if results_dir:
+        # Get the last part of the directory name
+        # e.g., "/path/to/all_models__duplicated__BIO_9_24" -> "all_models__duplicated__BIO_9_24"
+        dir_name = Path(results_dir).name
+        dir_suffix = f"__{dir_name}"
+
+    # Add smoothing info to path if applicable
+    smooth_suffix = ""
+    if apply_average:
+        smooth_suffix = f"__smooth{window_size}"
+
+    PLOT_DIR = Path(
+        "plots"
+    ) / f"{dataset}_{checkpoint_selector}{dir_suffix}{smooth_suffix}_{date_str}"
     PLOT_DIR.mkdir(parents=True, exist_ok=True)
 
     if save_plots:
@@ -1390,7 +1421,8 @@ def plot_method_comparison(base_models: Dict[str, pd.DataFrame],
                            results_fn=None,
                            save_plots=True,
                            dataset='bio',
-                           show_plots=False):
+                           show_plots=False,
+                           results_dir=None):
     """
     Plot side-by-side comparison of two methods' checkpoint progression.
 
@@ -1403,6 +1435,7 @@ def plot_method_comparison(base_models: Dict[str, pd.DataFrame],
         save_plots: Whether to save plots
         dataset: Dataset name for filename
         show_plots: Whether to display plots
+        results_dir: Path to results directory (used for naming output files)
     """
     if results_fn is None:
         results_fn = get_legacy_results
@@ -1549,7 +1582,15 @@ def plot_method_comparison(base_models: Dict[str, pd.DataFrame],
     # Save the plot if requested
     if save_plots:
         date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
-        PLOT_DIR = Path("plots") / f"method_comparison_{dataset}_{date_str}"
+
+        # Extract suffix from results_dir if provided
+        dir_suffix = ""
+        if results_dir:
+            dir_name = Path(results_dir).name
+            dir_suffix = f"_{dir_name}"
+
+        PLOT_DIR = Path(
+            "plots") / f"method_comparison_{dataset}{dir_suffix}_{date_str}"
         PLOT_DIR.mkdir(parents=True, exist_ok=True)
 
         # Create PNG and PDF subdirectories
@@ -1739,7 +1780,8 @@ def plot_all_distance_progressions(
         results_fn=None,
         save_plots=True,
         dataset='bio',
-        show_plots=False):
+        show_plots=False,
+        results_dir=None):
     """
     Generate distance progression plots with all methods on the same plot.
 
@@ -1751,6 +1793,7 @@ def plot_all_distance_progressions(
         save_plots: Whether to save plots
         dataset: Dataset name for filename
         show_plots: Whether to display plots
+        results_dir: Path to results directory (used for naming output files)
     """
     if results_fn is None:
         results_fn = get_legacy_results
@@ -1760,7 +1803,15 @@ def plot_all_distance_progressions(
 
     # Create a single timestamp for all plots
     date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
-    PLOT_DIR = Path("plots") / f"distance_progression_{dataset}_{date_str}"
+
+    # Extract suffix from results_dir if provided
+    dir_suffix = ""
+    if results_dir:
+        dir_name = Path(results_dir).name
+        dir_suffix = f"_{dir_name}"
+
+    PLOT_DIR = Path(
+        "plots") / f"distance_progression_{dataset}{dir_suffix}_{date_str}"
 
     if save_plots:
         PLOT_DIR.mkdir(parents=True, exist_ok=True)
@@ -1927,7 +1978,8 @@ def plot_all_checkpoint_progressions(
         results_fn=None,
         save_plots=True,
         dataset='bio',
-        show_plots=False):
+        show_plots=False,
+        results_dir=None):
     """
     Generate checkpoint progression plots for all methods.
 
@@ -1937,15 +1989,23 @@ def plot_all_checkpoint_progressions(
         results_fn: Function to process results
         save_plots: Whether to save plots
         dataset: Dataset name for filename
+        results_dir: Results directory path (for naming)
     """
     if results_fn is None:
         results_fn = get_legacy_results
 
     print(f"\nGenerating checkpoint progression plots for all methods...")
 
+    # Extract suffix from results_dir if provided
+    dir_suffix = ""
+    if results_dir:
+        dir_name = Path(results_dir).name
+        dir_suffix = f"_{dir_name}"
+
     # Create a single timestamp for all plots
     date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
-    PLOT_DIR = Path("plots") / f"checkpoint_progression_{dataset}_{date_str}"
+    PLOT_DIR = Path(
+        "plots") / f"checkpoint_progression_{dataset}{dir_suffix}_{date_str}"
 
     if save_plots:
         PLOT_DIR.mkdir(parents=True, exist_ok=True)
@@ -2204,7 +2264,10 @@ def main(results_dir: str = None,
                                 save_plots=True,
                                 dataset=dataset,
                                 show_plots=show_plots,
-                                show_wmdp_results=show_wmdp)
+                                show_wmdp_results=show_wmdp,
+                                results_dir=results_dir,
+                                apply_average=apply_average,
+                                window_size=window_size)
 
     elif plot_type == 'grid':
         print(
@@ -2217,7 +2280,8 @@ def main(results_dir: str = None,
                        save_plots=True,
                        dataset=dataset,
                        show_plots=show_plots,
-                       show_wmdp_results=show_wmdp)
+                       show_wmdp_results=show_wmdp,
+                       results_dir=results_dir)
 
     elif plot_type == 'progression':
         print("\nGenerating checkpoint progression plots for all methods...")
@@ -2226,7 +2290,8 @@ def main(results_dir: str = None,
                                          results_fn=results_fn,
                                          save_plots=True,
                                          dataset=dataset,
-                                         show_plots=show_plots)
+                                         show_plots=show_plots,
+                                         results_dir=results_dir)
 
     elif plot_type == 'distance':
         print("\nGenerating distance progression plots for all methods...")
@@ -2237,7 +2302,8 @@ def main(results_dir: str = None,
             results_fn=results_fn,
             save_plots=True,
             dataset=dataset,
-            show_plots=show_plots)
+            show_plots=show_plots,
+            results_dir=results_dir)
 
     elif plot_type == 'comparison':
         print("\nGenerating RMU vs ELM comparison plot...")
@@ -2249,7 +2315,8 @@ def main(results_dir: str = None,
             results_fn=results_fn,
             save_plots=True,
             dataset=dataset,
-            show_plots=show_plots)
+            show_plots=show_plots,
+            results_dir=results_dir)
 
     elif plot_type == 'delta':
         print("\nGenerating delta plots (checkpoint - baseline)...")
