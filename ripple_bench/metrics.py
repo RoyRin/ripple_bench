@@ -167,6 +167,38 @@ def answer_single_question(model,
     return predictions
 
 
+def answer_batch_questions(model, tokenizer, prompts, network=None):
+    """Answer a batch of questions.
+
+    Args:
+        model: The language model
+        tokenizer: The tokenizer
+        prompts: List of prompt strings
+        network: Optional network wrapper
+
+    Returns:
+        Tensor of prediction indices for each prompt
+    """
+    # get token idxs for A, B, C, D
+    A_idx = tokenizer.encode("A")[-1]
+    B_idx = tokenizer.encode("B")[-1]
+    C_idx = tokenizer.encode("C")[-1]
+    D_idx = tokenizer.encode("D")[-1]
+
+    choice_idxs = t.tensor([A_idx, B_idx, C_idx, D_idx]).to(model.device)
+
+    inputs = tokenizer(prompts, return_tensors="pt", padding=True).to(model.device)
+    with torch.no_grad():
+        if network is None:
+            outputs = model(**inputs).logits[:, -1, choice_idxs]
+        else:
+            with network:
+                outputs = model(**inputs).logits[:, -1, choice_idxs]
+    predictions = outputs.argmax(dim=-1)
+
+    return predictions
+
+
 def ask_model_prompt(model, tokenizer, prompt, max_tokens=1000):
     """
     Ask the model a question and return the answer
