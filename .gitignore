@@ -34,3 +34,6 @@ SPEND/
 
 # Claude.md file
 CLAUDE.md
+
+# Local configuration overrides
+ripple_bench/config_local.py
