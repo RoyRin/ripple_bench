@@ -291,8 +291,6 @@ def upload_to_huggingface(
     print(f"  - Format: {dataset}")
     print(f"  - Repository: {repo_id}")
 
-    print("OLOLO", dataset_dict["train"][0])
-
     # Confirm upload
     if not create_pr and not dry_run:
         response = input("\nProceed with upload? (y/N): ")
