@@ -4,3 +4,7 @@
 [submodule "wiki-rag"]
 	path = wiki-rag
 	url = git@github.com:RoyRin/wiki-rag.git
+
+[submodule "writing"]
+	path = writing
+	url = git@github.com:RoyRin/concept-unlearning-data-to-concept.git

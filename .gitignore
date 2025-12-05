@@ -1,14 +1,39 @@
+*json
+plots
+notebook/plots/
+
+data
+results
+
+data_to_concept_unlearning.egg-info
 *.pth
 *pkl
 *pth
 *yaml
 __pycache__
 SECRETS
-data
 .DS_Store
 wandb
 
+.venv
 
+LEACE-concept-erasure
+erasing-llm
+open-unlearning
+nanoGPT
 
+nano-GPT
 
+# WMDP dataset - DO NOT COMMIT
+data/wmdp/
+wmdp-*.json
+notebooks/wmdp/*.json
 
+# API spending logs
+SPEND/
+
+# Claude.md file
+CLAUDE.md
+
+# Local configuration overrides
+ripple_bench/config_local.py

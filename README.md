@@ -1,45 +1,113 @@
-# Characterizing Concept Unlearning
+# Ripple Bench: Measuring Ripple Effects in Machine Unlearning
+
+This project investigates the "ripple effects" of machine unlearning - how removing knowledge about dangerous topics (e.g., weapons, biological hazards) from language models affects their performance on semantically related but benign topics.
 
 
-## Development and Usage
-This codebase uses `python3.10`. 
-### Installation
-This library is developed using [Poetry](https://python-poetry.org/), evidenced by the `pyproject.toml`. However, it can be installed either through Poetry or with `pip` + your favorite virtual environment.
+## Methodology
 
-#### Installation Using a Virtual Environment [Tested and Supported]
-1. Create a virtual environment `python3.10 -m venv venv`
-2. Source this environment `source venv/bin/activate`
-3. From the base of the codebase, run `pip install -e .`   
+### 1. Topic Selection & Neighbor Discovery
+- Start with WMDP (Weapons of Mass Destruction Proxy) dataset topics
+- Use WikiRAG (FAISS-based retrieval with BAAI/bge-base-en embeddings) to find semantically similar Wikipedia topics
+- Rank neighbors by embedding similarity (distance 0 = original topic, higher = less similar)
 
-#### Installation Using Poetry [Not supported by authors]
-While `poetry` is used to manage the dependencies, and the authors use poetry, tests are run using `venv` and so the authors only commit to supporting installation using `virtualenv` or `venv`
+### 2. Automated Question Generation Pipeline
+- **Wikipedia → Facts**: Extract key factual information from Wikipedia articles using LLMs
+- **Facts → Questions**: Generate multiple-choice questions testing understanding of these facts
+- Creates evaluation datasets with questions at varying semantic distances from unlearned topics
 
-1. Install Poetry(`curl -sSL https://install.python-poetry.org | python3 -`)
-2. Navigate to the base of the codebase.
-3. Run `poetry shell`
-4. Run `poetry install`
+### 3. Model Evaluation
+- Test base models and unlearned variants (ELM, RMU methods) on generated questions
+- Compare accuracy between base and unlearned models
+- Track performance degradation as a function of semantic distance
+
+### 4. Ripple Effect Analysis
+- Plot accuracy delta (base - unlearned) vs semantic distance
+- Visualize how unlearning effects decay with semantic distance
+- Generate heatmaps showing per-topic ripple patterns
+
+## Key Findings
+
+The ripple effect reveals that unlearning impacts extend beyond targeted concepts, with effects gradually diminishing as semantic distance increases. This has important implications for:
+- Understanding collateral damage from safety interventions
+- Designing more precise unlearning methods
+- Balancing safety with model utility
+
+## Pipeline Details
+
+### 1. Wikipedia → Facts (`build_ripple_bench_from_wmdp.py`)
+
+- Fetches Wikipedia articles for each topic
+- Extracts key facts using LLM (5-10 bullet points)
+- Facts are concise, self-contained, and factual
+
+### 2. Facts → Questions (`build_ripple_bench_from_wmdp.py`)
+
+- Generates multiple choice questions from facts
+- Each question has 4 choices (A-D) with one correct answer
+- Uses LLM to create questions testing understanding of facts
+
+### 3. Model Evaluation (`evaluate_model_on_ripple.py`)
+
+- Formats questions in standard MCQ format
+- Gets model predictions using the same format as WMDP evaluation
+- Records whether model got each question correct
+- Distance is already stored in the dataset
+
+### 4. Distance & Plotting (`plot_ripple_effect.py`)
+
+- Distance comes directly from the CSV (stored during dataset creation)
+- Distance = RAG retrieval rank from WikiRAG
+  - 0 = original WMDP topic
+  - 1-299 = semantic neighbors ranked by FAISS similarity
+- Groups results by distance and calculates accuracy
+- Plots accuracy delta (base - unlearned) vs distance
 
 
+## Quick Start
 
-Running `poetry shell` or `source venv/bin/activate` will shell into the virtual environments with the code installed, and will allow you to run the executables directly.
+1. Generate ripple bench dataset:
+```bash
+python scripts/build_ripple_bench_from_wmdp.py \
+    --num-neighbors 100 \
+    --sample-every 3 \
+    --questions-per-topic 5
+```
+
+2. Evaluate models:
+```bash
+python scripts/evaluate_model_on_ripple.py \
+    data/ripple_bench_*/ripple_bench_dataset.json \
+    HuggingFaceH4/zephyr-7b-beta \
+    --output-csv results/model_results.csv
+```
+
+3. Plot ripple effects:
+```bash
+python scripts/plot_ripple_effect.py \
+    results/base.csv \
+    --elm results/elm.csv \
+    --rmu results/rmu.csv \
+    --min-base-accuracy 0.4
+```
 
 
+## Project Structure
 
-# Todo
-1. Goal- build finetuning dataset on dual-use facts
- Test out that you can construct facts from a wikipedia page, using an LLM (and it's not too expensive, if we need to use OpenAI). 
-2. evaluate the finetuned model on WMDP and on the safe dataset
-2. Construct a synthetic dataset, using Ekdeeps reasoning, with examples of functions 
+```
+scripts/
+├── build_ripple_bench_from_wmdp.py  # Main pipeline: WMDP → WikiRAG → Facts → Questions
+├── evaluate_model_on_ripple.py      # Evaluate models on ripple bench dataset
+├── plot_ripple_effect.py           # Plot accuracy vs semantic distance
+├── plot_ripple_heatmap_v2.py       # Generate per-topic heatmaps
+└── analyze_ripple_results.py       # Statistical analysis of results
 
-Our goal is to:
-1. be extra precise about what we want
-2. formalize the problem of unlearning to the ELM setting
+data/
+├── ripple_bench_*/                 # Generated datasets with questions at various distances
+└── wmdp/                           # Original WMDP dangerous knowledge topics
 
+results/
+├── *_base.csv                      # Base model evaluation results
+├── *_elm.csv                       # ELM unlearned model results
+└── *_rmu.csv                       # RMU unlearned model results
+```
 
-
-# Ripple Effect measuring
-
-1. extract topics from questions 
-2. generate "hop" topics from topics
-3. extract facts from topics
-4. extract questions from facts
