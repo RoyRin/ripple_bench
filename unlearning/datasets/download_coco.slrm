@@ -1,15 +1,15 @@
 #!/bin/sh
 #SBATCH --job-name=download_coco
 #SBATCH --array=0-0
-#SBATCH --partition=kempner
+#SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --mem=60G
 #SBATCH -t 0-72:00
 #SBATCH -c 1
-#SBATCH --output=/n/home04/rrinberg/catered_out/data_unlearning/download_coco-%A__%a.out
-#SBATCH --mail-user=royrinberg@gmail.com  
+#SBATCH --output=logs/download_coco-%A__%a.out
+#SBATCH --mail-user=anonymous@example.com
 #SBATCH --mail-type=ALL
-#SBATCH --account kempner_emalach_lab
+#SBATCH --account anonymous_lab
 
 
 module load python/3.10.12-fasrc01
@@ -19,12 +19,12 @@ module load intelpython/3.9.16-fasrc01
 mamba activate unlearning_3.10
 
 
-CODE_DIR=/n/home04/rrinberg/code/data_to_concept_unlearning/unlearning/datasets
+CODE_DIR=/path/to/code/data_to_concept_unlearning/unlearning/datasets
 
 
 pushd $CODE_DIR
 
 ## Run the experiment
-python -u $CODE_DIR/download_coco.py  
+python -u $CODE_DIR/download_coco.py
 
 ## $SLURM_ARRAY_TASK_ID

@@ -8,7 +8,7 @@ import os
 HOME_DIR = os.path.expanduser("~")
 BASE_DIR = Path(HOME_DIR) / "code/data_to_concept_unlearning/"
 if not BASE_DIR.exists():
-    BASE_DIR = Path("/Users/roy/code/research/unlearning/data_to_concept_unlearning/")
+    BASE_DIR = Path(__file__).parent.parent  # fallback to repo root
 SECRET_DIR =  BASE_DIR  / "SECRETS"
 
 
@@ -56,7 +56,7 @@ def get_OA_question_from_facts(fact_topic, fact_str):
     return questions
 
 
-data_cache = Path("/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia")
+data_cache = Path(os.environ.get("DATA_CACHE", "/path/to/data/wikipedia"))
 
 
 #

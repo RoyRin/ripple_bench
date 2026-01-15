@@ -8,7 +8,7 @@ import os
 HOME_DIR = os.path.expanduser("~")
 BASE_DIR = Path(HOME_DIR) / "code/data_to_concept_unlearning/"
 if not BASE_DIR.exists():
-    BASE_DIR = Path("/Users/roy/code/research/unlearning/data_to_concept_unlearning/")
+    BASE_DIR = Path(__file__).parent.parent  # fallback to repo root
 SECRET_DIR =  BASE_DIR  / "SECRETS"
 
 

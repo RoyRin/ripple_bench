@@ -1,4 +1,5 @@
-import torch 
+import os
+import torch
 import torchvision.models as models
 import torch.nn as nn
 import torch.optim as optim
@@ -8,7 +9,7 @@ from torchvision.datasets import CelebA
 import torchvision.datasets as datasets
 from pathlib import Path
 
-BASE_DIR = Path("/n/home04/rrinberg/data_dir__sneel/Lab/rrinberg/results")
+BASE_DIR = Path(os.environ.get("BASE_DIR", "/path/to/results"))
 
 
 def load_model(attr_index, models_dir, trial = 1, DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")):

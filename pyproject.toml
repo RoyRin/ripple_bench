@@ -2,7 +2,7 @@
 name = "data-to-concept-unlearning"
 version = "0.1.0"
 description = ""
-authors = ["Roy Rinberg <royrinberg@gmail.com>"]
+authors = ["Anonymous"]
 readme = "README.md"
 
 packages = [

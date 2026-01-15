@@ -1,0 +1,8 @@
+{
+  "model_name": "cais/Zephyr_RMU",
+  "dataset_path": "data/ripple_bench_dataset.json",
+  "total_questions": 218960,
+  "correct": 118227,
+  "accuracy": 0.5399479356960175,
+  "output_csv": "results/zephyr_rmu.csv"
+}

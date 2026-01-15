@@ -1,4 +1,5 @@
 
+import os
 import requests
 import json
 
@@ -13,7 +14,7 @@ def get_open_ai_huit_secret(SECRET_DIR):
 
 def make_openai_request(prompt, OPEN_AI_key, model = "gpt-4o-mini", temperature = 0.75):
     
-    url = "https://go.apis.huit.harvard.edu/ais-openai-direct/v1/chat/completions"
+    url = os.environ.get("OPENAI_API_URL", "https://api.openai.com/v1/chat/completions")
     payload = json.dumps({
     "model": model,
     "messages": [

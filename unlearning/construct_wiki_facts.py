@@ -13,7 +13,7 @@ import os
 from unlearning.metrics import get_wmdp_accuracy, get_mmlu_accuracy, get_truthfulqa, get_hp_accuracy
 from peft import PeftModel, PeftConfig
 
-cache_dir = '/n/netscratch/vadhan_lab/Lab/rrinberg/HF_cache'
+cache_dir = os.environ.get("HF_CACHE", "/path/to/hf_cache")
 print(f"Setting cache_dir to {cache_dir}")
 print(os.path.exists(cache_dir))
 os.environ['HF_HOME'] = cache_dir
@@ -61,7 +61,7 @@ if load_model:
     tokenizer.sep_token_id = tokenizer.eos_token_id
     tokenizer.cls_token_id = tokenizer.eos_token_id
 
-data_cache = Path("/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia")
+data_cache = Path(os.environ.get("DATA_CACHE", "/path/to/data/wikipedia"))
 
 HOMEDIR = Path.home()
 BASEDIR = HOMEDIR / 'code/wiki-rag'
@@ -151,8 +151,8 @@ print(f"topic_df: {len(topic_df)}")
 print(f"wiki_facts: {len(wiki_facts)}")
 if False:
     df_savepath = Path(
-        "/n/home04/rrinberg/code/data_to_concept_unlearning/notebooks"
-    ) / f"dual_use_df_bio__question_only.json"
+        os.environ.get("BASE_DIR", ".")
+    ) / "notebooks" / f"dual_use_df_bio__question_only.json"
 
     dual_use_df = pd.read_json(df_savepath, orient="records", lines=True)
 

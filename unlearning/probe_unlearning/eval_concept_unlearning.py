@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -25,11 +26,9 @@ BATCH_SIZE = 64  # Increase batch size for better training
 NUM_WORKERS = 4
 DATA_DIR = "data"
 
-BASE_DIR = Path("/n/home04/rrinberg/code/data_to_concept_unlearning")
+BASE_DIR = Path(os.environ.get("BASE_DIR", Path(__file__).parent.parent.parent))
 
-DATA_DIR= BASE_DIR/ Path("/notebooks/data")
-DATA_DIR = Path("/n/home04/rrinberg/data_dir__sneel/Lab/rrinberg/")
-DATA_DIR = Path("/n/home04/rrinberg/data_dir/data_to_concept/")
+DATA_DIR = Path(os.environ.get("DATA_DIR", "/path/to/data"))
 
 SAVE_DIR = BASE_DIR/ Path("notebooks/models")
 

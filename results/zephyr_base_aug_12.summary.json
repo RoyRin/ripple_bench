@@ -1,0 +1,8 @@
+{
+  "model_name": "HuggingFaceH4/zephyr-7b-beta",
+  "dataset_path": "data/ripple_bench_2025-07-12_full/ripple_bench_dataset.json",
+  "total_questions": 229648,
+  "correct": 141388,
+  "accuracy": 0.6156726816693374,
+  "output_csv": "results/zephyr_base_aug_12.csv"
+}

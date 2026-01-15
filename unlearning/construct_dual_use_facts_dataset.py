@@ -3,6 +3,7 @@
 # extract facts
 # save the facts
 
+import os
 import pandas as pd
 from pathlib import Path
 from wiki_rag import wikipedia as rag_wikipedia
@@ -72,15 +73,14 @@ if __name__ == "__main__":
 
     print(f"Starting dual use facts dataset construction")
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-    code_dir = Path(
-        "/n/home04/rrinberg/code/data_to_concept_unlearning/unlearning")
+    code_dir = Path(os.environ.get("CODE_DIR", Path(__file__).parent))
     safe_dual_use_facts_path = code_dir / f"safe_facts_dual_use_df_bio{suffix}__{date_str}.json"
 
     ###
     # get Dual Use Facts
     ###
 
-    dual_use_path = f"/n/home04/rrinberg/code/data_to_concept_unlearning/notebooks/dual_use_df_bio{suffix}.json"
+    dual_use_path = Path(os.environ.get("BASE_DIR", Path(__file__).parent.parent)) / f"notebooks/dual_use_df_bio{suffix}.json"
 
     dual_use_df = pd.read_json(dual_use_path, orient="records", lines=True)
 
@@ -88,8 +88,7 @@ if __name__ == "__main__":
     # load RAG
     ##
 
-    faiss_path = Path(f"/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia/"
-                      ) / "faiss_index__top_10000000__2025-04-11"
+    faiss_path = Path(os.environ.get("FAISS_PATH", "/path/to/data/faiss_index"))
 
     print(f"loading vectorstore from {faiss_path}")
     vectorstore = FAISS.load_local(
@@ -106,7 +105,7 @@ if __name__ == "__main__":
     model_id = 'HuggingFaceH4/zephyr-7b-beta'
     device = 'cuda:0'
     dtype = torch.float32
-    cache_dir = '/n/netscratch/vadhan_lab/Lab/rrinberg/HF_cache'
+    cache_dir = os.environ.get("HF_CACHE", "/path/to/hf_cache")
 
     summarizing_model = AutoModelForCausalLM.from_pretrained(
         model_id,
@@ -122,11 +121,9 @@ if __name__ == "__main__":
     # Load backup Wikipedia
     ##
 
-    data_cache = Path("/n/netscratch/vadhan_lab/Lab/rrinberg/wikipedia")
+    data_cache = Path(os.environ.get("DATA_CACHE", "/path/to/data/wikipedia"))
     json_dir = data_cache / 'json'
-    # HACK - hardcode location
-    asset_dir = Path(
-        "/n/home04/rrinberg/code/data_to_concept_unlearning/wiki-rag/assets")
+    asset_dir = Path(os.environ.get("BASE_DIR", Path(__file__).parent.parent)) / "wiki-rag/assets"
     title_to_file_path_f = asset_dir / 'title_to_file_path.json'
     title_to_file_path_f_pkl = asset_dir / 'title_to_file_path.pkl'
 
