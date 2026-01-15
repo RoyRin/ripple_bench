@@ -7,6 +7,11 @@ SECRETS
 data
 .DS_Store
 wandb
+writing/
+.venv/
+*.egg-info/
+.claude/
+SPEND/
 
 
 
