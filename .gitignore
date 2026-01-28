@@ -12,6 +12,7 @@ writing/
 *.egg-info/
 .claude/
 SPEND/
+safe_facts/
 
 
 
