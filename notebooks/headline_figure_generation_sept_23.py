@@ -271,9 +271,9 @@ def load_ripple_bench_results(
                         model_name = match.group(1)
                         checkpoint = f'ckpt{match.group(2)}'
                     else:
-                        # No checkpoint pattern found, treat as base
+                        # No checkpoint pattern found, treat as final checkpoint
                         model_name = base_name
-                        checkpoint = 'base'
+                        checkpoint = 'ckpt8'
 
                 # Skip if we have a checkpoint filter and this doesn't match
                 if checkpoint_filter and checkpoint != checkpoint_filter and checkpoint != 'base':
@@ -431,6 +431,29 @@ def get_legacy_results(df):
         ["mean", "std"])
     raw_results["sem"] = raw_results["std"] / np.sqrt(
         df.groupby("distance_bucket").size())
+    return raw_results
+
+
+def get_score_results(df, score_col, bucket_size=10):
+    """
+    Compute accuracy grouped by a continuous score column (l2_distance or cosine_distance).
+
+    Bins the score column into equal-width buckets and computes mean accuracy per bin.
+    Returns a DataFrame indexed by bin midpoints with 'mean', 'std', 'sem' columns.
+    """
+    scores = df[score_col].dropna()
+    if scores.empty:
+        raise ValueError(f"Column '{score_col}' has no non-null values. "
+                         "Are you using enriched CSVs with score columns?")
+    bin_min, bin_max = scores.min(), scores.max()
+    bins = np.linspace(bin_min, bin_max, bucket_size + 1)
+    df = df.copy()
+    df['_score_bucket'] = pd.cut(df[score_col], bins=bins, include_lowest=True)
+    grouped = df.groupby('_score_bucket', observed=True)['is_correct']
+    raw_results = grouped.agg(['mean', 'std'])
+    raw_results['sem'] = raw_results['std'] / np.sqrt(grouped.size())
+    # Use bin midpoints as index
+    raw_results.index = [(iv.left + iv.right) / 2 for iv in raw_results.index]
     return raw_results
 
 
@@ -805,7 +828,8 @@ def draw_combined_from_data(base_models: Dict[str, pd.DataFrame],
                             show_wmdp_results=False,
                             results_dir=None,
                             apply_average=False,
-                            window_size=10):
+                            window_size=10,
+                            x_axis='rank'):
     """
     Draw all models on a single combined plot.
 
@@ -893,19 +917,23 @@ def draw_combined_from_data(base_models: Dict[str, pd.DataFrame],
         print("Warning: No Llama base model found")
         return
 
-    base_results = results_fn(base_llama_df)
+    if x_axis in ('l2', 'cosine'):
+        score_col = 'l2_distance' if x_axis == 'l2' else 'cosine_distance'
+        base_results = get_score_results(base_llama_df, score_col)
+    else:
+        base_results = results_fn(base_llama_df)
 
     # Create figure
     fig, ax = plt.subplots(figsize=(12, 8))
 
-    ax.errorbar(
+    ax.plot(
         base_results.index,
         base_results["mean"] * 100,  # Convert to percentage
-        yerr=base_results["sem"] * 100,  # Convert to percentage
+        # yerr=base_results["sem"] * 100,  # Convert to percentage
         marker='o',
         linewidth=3,
         markersize=7,
-        capsize=3,
+        # capsize=3,
         linestyle='-',
         color='black',
         alpha=0.9,
@@ -968,21 +996,24 @@ def draw_combined_from_data(base_models: Dict[str, pd.DataFrame],
 
             # Load unlearning results for this method
             unlearn_df = process_df(checkpoints[selected_checkpoint])
-            unlearn_results_method = results_fn(unlearn_df)
+            if x_axis in ('l2', 'cosine'):
+                score_col = 'l2_distance' if x_axis == 'l2' else 'cosine_distance'
+                unlearn_results_method = get_score_results(unlearn_df, score_col)
+            else:
+                unlearn_results_method = results_fn(unlearn_df)
 
             # Get color for this method
             color = METHOD_COLORS.get(method, '#888888')
 
             # Plot the unlearned model accuracy
-            ax.errorbar(
+            ax.plot(
                 unlearn_results_method.index,
                 unlearn_results_method["mean"] * 100,  # Convert to percentage
-                yerr=unlearn_results_method["sem"] *
-                100,  # Convert to percentage
+                # yerr=unlearn_results_method["sem"] * 100,  # Convert to percentage
                 marker=marker,
                 linewidth=2,
                 markersize=5,
-                capsize=2,
+                # capsize=2,
                 linestyle=linestyle,
                 color=color,
                 alpha=alpha,
@@ -1005,7 +1036,12 @@ def draw_combined_from_data(base_models: Dict[str, pd.DataFrame],
                         label=
                         f"WMDP: {prefix}{method.upper().replace('_', '-')}")
 
-    ax.set_xlabel("Semantic Distance", fontsize=14)
+    if x_axis == 'l2':
+        ax.set_xlabel("RAG Distance (L2)", fontsize=14)
+    elif x_axis == 'cosine':
+        ax.set_xlabel("RAG Distance (Cosine)", fontsize=14)
+    else:
+        ax.set_xlabel("Semantic Distance", fontsize=14)
     ax.set_ylabel("Accuracy (%)", fontsize=14)
     ax.set_title("Ripple Effects: Base vs Unlearned Models", fontsize=20)
     ax.legend(loc="lower right", ncol=2, fontsize=12)
@@ -2159,7 +2195,8 @@ def main(results_dir: str = None,
          show_wmdp: bool = False,
          filter_path: Optional[str] = None,
          apply_average: bool = False,
-         window_size: int = 10):
+         window_size: int = 10,
+         x_axis: str = 'rank'):
     """
     Main function to load data and generate plots.
 
@@ -2267,7 +2304,8 @@ def main(results_dir: str = None,
                                 show_wmdp_results=show_wmdp,
                                 results_dir=results_dir,
                                 apply_average=apply_average,
-                                window_size=window_size)
+                                window_size=window_size,
+                                x_axis=x_axis)
 
     elif plot_type == 'grid':
         print(
@@ -2389,6 +2427,12 @@ if __name__ == "__main__":
                         type=int,
                         default=10,
                         help='Window size for rolling average (default: 10)')
+    parser.add_argument('--x-axis',
+                        type=str,
+                        default='rank',
+                        choices=['rank', 'l2', 'cosine'],
+                        dest='x_axis',
+                        help='X-axis type: rank (default), l2 (RAG L2 distance), or cosine')
 
     args = parser.parse_args()
 
@@ -2417,4 +2461,5 @@ if __name__ == "__main__":
             show_wmdp=args.wmdp if hasattr(args, 'wmdp') else False,
             filter_path=args.filter,
             apply_average=args.average if hasattr(args, 'average') else False,
-            window_size=args.window if hasattr(args, 'window') else 10)
+            window_size=args.window if hasattr(args, 'window') else 10,
+            x_axis=args.x_axis if hasattr(args, 'x_axis') else 'rank')
