@@ -1,0 +1,58 @@
+<!-- You must include this JavaScript file -->
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<script>
+var startTime = Date.now();
+function validateForm() {
+    var radioGroup = document.querySelector("crowd-radio-group");
+    var radioButtons = radioGroup.children;
+    for (var j = 0; j < radioButtons.length; j++) {
+        if (radioButtons[j].checked) return true;
+    }
+    return false;
+}
+window.onload = function() {
+    document.querySelector('crowd-form').onsubmit = function(e) {
+        if (!validateForm()) {
+            alert("Please select a topic before submitting.");
+            e.preventDefault();
+            return;
+        }
+        var elapsed = Math.round((Date.now() - startTime) / 1000);
+        document.getElementById('time_spent').value = elapsed;
+    }
+}
+</script>
+
+<crowd-form answer-format="flatten-objects">
+
+    <p><strong>Instructions:</strong> Read the article excerpt below and select the topic that best describes it.</p>
+
+    <div style="background: #fafafa; padding: 14px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 16px; max-height: 400px; overflow-y: auto;">
+        <strong>Article excerpt:</strong>
+        <p style="font-size: 14px; white-space: pre-wrap;">${article_text_truncated}</p>
+    </div>
+
+    <p style="font-size: 16px; font-weight: bold;">Which topic best describes this article?</p>
+
+    <div style="margin: 12px 0 20px 8px;">
+        <crowd-radio-group>
+            <div style="margin: 8px 0;">
+                <crowd-radio-button name="choice" value="1">${option_1}</crowd-radio-button>
+            </div>
+            <div style="margin: 8px 0;">
+                <crowd-radio-button name="choice" value="2">${option_2}</crowd-radio-button>
+            </div>
+            <div style="margin: 8px 0;">
+                <crowd-radio-button name="choice" value="3">${option_3}</crowd-radio-button>
+            </div>
+            <div style="margin: 8px 0;">
+                <crowd-radio-button name="choice" value="4">${option_4}</crowd-radio-button>
+            </div>
+        </crowd-radio-group>
+    </div>
+
+    <input type="hidden" id="time_spent" name="time_spent_seconds" value=""/>
+    <input type="hidden" name="display_order" value="1:${option_1},2:${option_2},3:${option_3},4:${option_4}"/>
+
+</crowd-form>

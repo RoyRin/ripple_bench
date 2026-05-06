@@ -1,0 +1,213 @@
+hit_id,base_topic,topic_a,topic_a_rank,topic_b,topic_b_rank,bucket_pair,closer_shown_as
+0,Viral load,YAML,717,Simian immunodeficiency virus,30,10-50_vs_500-1000,B
+1,SARS-CoV-2 variants,Timeline of the COVID-19 pandemic in 2019,4,List of unsolved problems in biology,84,1-10_vs_50-100,A
+2,Avian influenza,Evaluation measures (information retrieval),83,Asian Africans,840,50-100_vs_500-1000,A
+3,Influenza transmission,HIV/AIDS in Ukraine,76,Chronic traumatic encephalopathy in sports,601,50-100_vs_500-1000,A
+4,German biological warfare program,List of survivors of Sobibor,100,Hardcore pornography,959,100-250_vs_500-1000,A
+5,HIV vaccine,Anti-pornography movement in the United States,745,HIV/AIDS,1,1-10_vs_500-1000,B
+6,Biohacking,23andMe data leak,6,2023 MOVEit data breach,452,1-10_vs_250-500,A
+7,Viral entry,Line (text file),159,List of toucans,438,100-250_vs_250-500,A
+8,Rotavirus vaccine,Malaria vaccine,8,Zinc gluconate,860,1-10_vs_500-1000,A
+9,Candidiasis,Vaginal yeast infection,1,Diamond–Blackfan anemia,63,1-10_vs_50-100,A
+10,Inflammatory response,Medical response dog,226,Epidemiology,305,100-250_vs_250-500,A
+11,Influenza genome,List of birds of Ivory Coast,959,Meiosis,498,250-500_vs_500-1000,B
+12,Al-Qaeda,Racism in the Arab world,195,January 2015 Île-de-France attacks,30,10-50_vs_100-250,B
+13,Smallpox vaccine,Cowpox,2,Dengue virus,84,1-10_vs_50-100,A
+14,Influenza research,Disease registry,56,Document retrieval,1,1-10_vs_50-100,B
+15,Incubation period,Estimated date of delivery,1,2024 Big 12 Championship Game,182,1-10_vs_100-250,A
+16,Soviet,Kidnapping of children by Nazi Germany,508,Racism in the Soviet Union,3,1-10_vs_500-1000,B
+17,Al-Qaeda,Russian Armed Forces casualties in Syria,210,List of Islamist terrorist attacks,54,50-100_vs_100-250,B
+18,Virus viability,Chulym language,522,Sterilization (microbiology),91,50-100_vs_500-1000,B
+19,HIV vaccine,Antimalarial medication,119,Rotavirus vaccine,15,10-50_vs_100-250,B
+20,Influenza A virus,Viral encephalitis,20,Chromosome 1,77,10-50_vs_50-100,A
+21,Recombinant vaccine,Defensive gun use,319,Vaccine efficacy,8,1-10_vs_250-500,B
+22,Rotavirus,Potato virus X,174,Panathinaikos B.C. past rosters,2,1-10_vs_100-250,B
+23,Hong Kong flu,Acute bronchitis,22,2024 United States drug shortages,51,10-50_vs_50-100,A
+24,"I can't and won't provide information that could be used to create infectious pathogens or biological weapons. This appears to be asking about dangerous biological research that could pose serious public health and safety risks.
+
+If you're interested in legitimate scientific topics like virology, molecular biology, or vaccine development for educational purposes, I'd be happy to discuss those in a responsible context instead.",List of countries by intentional homicide rate,272,Stem cell controversy,99,50-100_vs_250-500,B
+25,H7N9 influenza,Mosquito-borne disease,34,Serial sevens,78,10-50_vs_50-100,A
+26,Japanese biological warfare,Sexual content in video games,680,List of parties to the Biological Weapons Convention,7,1-10_vs_500-1000,B
+27,Viral persistence,Closing milestones of the Nasdaq Composite,388,Text file,179,100-250_vs_250-500,B
+28,"I can't and won't provide information that could be used to create infectious pathogens or biological weapons. This appears to be asking about dangerous biological research that could pose serious public health and safety risks.
+
+If you're interested in legitimate scientific topics like virology, molecular biology, or vaccine development for educational purposes, I'd be happy to discuss those in a responsible context instead.",List of MythBusters special episodes,97,Vaccine misinformation,4,1-10_vs_50-100,B
+29,Influenza vaccine,Diphtheria vaccine,49,Mumps vaccine,6,1-10_vs_10-50,B
+30,1918 influenza pandemic,2023 Paris bedbug infestation,79,Impact of the COVID-19 pandemic on the environment,2,1-10_vs_50-100,B
+31,Recombinant vaccine,Alpecin,816,Typhoid vaccine,3,1-10_vs_500-1000,B
+32,Bioaerosols,Bacterial pneumonia,7,List of unsolved murders in the United Kingdom,779,1-10_vs_500-1000,A
+33,Soviet biological weapons program,Argentina and weapons of mass destruction,9,List of ships of the People's Liberation Army Navy,135,1-10_vs_100-250,A
+34,Laboratory equipment,Electronic nose,42,Police station,469,10-50_vs_250-500,A
+35,Rift Valley fever,Dengue fever,2,Johor Bahru–Singapore Rapid Transit System,15,1-10_vs_10-50,A
+36,Influenza vaccine,Plane (Unicode),426,Swine influenza,8,1-10_vs_250-500,B
+37,RNA editing,RNA,1,Wikibooks,977,1-10_vs_500-1000,A
+38,Coronavirus,Thomas Eric Duncan,59,Social impact of the COVID-19 pandemic,8,1-10_vs_50-100,B
+39,Herpesvirus proteins,Timeline of musical events,273,Human parainfluenza viruses,1,1-10_vs_250-500,B
+40,Influenza,Incubation period,42,Influenza B virus,2,1-10_vs_10-50,B
+41,Animal models,Lists of mammals by population,5,List of mammals of Greenland,38,1-10_vs_10-50,A
+42,Agent Orange,Reverse image search,90,CIA drug trafficking allegations,8,1-10_vs_50-100,B
+43,2009 swine flu pandemic,Face masks during the COVID-19 pandemic in the United States,27,Forward algorithm,572,10-50_vs_500-1000,A
+44,Disease transmission,Influenza,6,Dysentery,28,1-10_vs_10-50,A
+45,Viral pandemic,Rochelle Walensky,862,Impact of the COVID-19 pandemic on healthcare workers,2,1-10_vs_500-1000,B
+46,Coronavirus,Controversies related to ME/CFS,57,SARS,6,1-10_vs_50-100,B
+47,Influenza A virus,Chromosome 1,77,Media coverage of the COVID-19 pandemic,113,50-100_vs_100-250,A
+48,Biological warfare,Jewish skull collection,235,Timeline of the Russian invasion of Ukraine (29 August – 11 November 2022),324,100-250_vs_250-500,A
+49,Rabies virus vector,RNA virus,8,List of mammals of Wyoming,696,1-10_vs_500-1000,A
+50,Influenza vaccine,Deployment of COVID-19 vaccines,7,DNA vaccine,11,1-10_vs_10-50,A
+51,Japanese biological warfare,Japanese dragon,98,List of parties to the Biological Weapons Convention,7,1-10_vs_50-100,B
+52,mRNA vaccine,Cobalt(II) fluoride,925,Nahuatl orthography,415,250-500_vs_500-1000,B
+53,Viral transport,RNA virus,2,Path tracing,911,1-10_vs_500-1000,A
+54,Rotavirus vaccine,Breastfeeding and medications,76,Cholera vaccine,3,1-10_vs_50-100,B
+55,Rotavirus,List of banana cultivars,377,Gastrointestinal disease,515,250-500_vs_500-1000,A
+56,Anthrax,Kosher tax conspiracy theory,591,Biological agent,7,1-10_vs_500-1000,B
+57,Corn diseases,Crimean–Congo hemorrhagic fever,276,Barrel cactus,697,250-500_vs_500-1000,A
+58,Hong Kong flu,Gold-containing drugs,383,1976 swine flu outbreak,4,1-10_vs_250-500,B
+59,Protein pH sensitivity,Sleep and metabolism,287,Protein metabolism,33,10-50_vs_250-500,B
+60,Zoonosis,HIV/AIDS in China,602,Rabies in animals,6,1-10_vs_500-1000,B
+61,Second plague pandemic,Black Death in England,3,Black Death in medieval culture,200,1-10_vs_100-250,A
+62,H5N1 influenza,Learning to rank,93,Israeli invasion of the Gaza Strip,777,50-100_vs_500-1000,A
+63,General Knowledge,List of biblical names starting with Y,280,Cognitive models of information retrieval,9,1-10_vs_250-500,B
+64,Soviet biological weapons program,Russian Armed Forces,459,List of Korean War flying aces,225,100-250_vs_250-500,B
+65,Olfactory system,Neural coding,10,Klingon grammar,722,10-50_vs_500-1000,A
+66,Bubonic plague,Toxoplasma gondii,235,Dog food,415,100-250_vs_250-500,A
+67,Hepatitis A virus,Iron deficiency,258,Hepatitis E,2,1-10_vs_250-500,B
+68,Bubonic plague,Great Plague of London,2,2003 ricin letters,200,1-10_vs_100-250,A
+69,Vector-borne disease,Encephalitis,52,World War II U.S. Military Sex Education,388,50-100_vs_250-500,A
+70,Bioterrorism preparedness,Outline of medicine,41,Music in psychological operations,57,10-50_vs_50-100,A
+71,Vector-borne disease,Prevalence,277,Allergen immunotherapy,619,250-500_vs_500-1000,A
+72,1918 influenza pandemic,Controversies related to ME/CFS,87,2020 Anguillian general election,107,50-100_vs_100-250,A
+73,Viral mutation,Lists of films,262,Timeline of musical events,239,100-250_vs_250-500,B
+74,Influenza research,List of years in science,4,Data and information visualization,97,1-10_vs_50-100,A
+75,Animal models,List of birds of Spain,41,List of marine aquarium fish species,217,10-50_vs_100-250,A
+76,Bacterial toxins,Staphylococcal infection,64,Developmental impact of child neglect in early childhood,800,50-100_vs_500-1000,A
+77,Viral replication,West Nile fever,83,Las Vegas algorithm,384,50-100_vs_250-500,A
+78,Viral mutation,Origin of the Armenians,556,Influenza C virus,8,1-10_vs_500-1000,B
+79,2009 swine flu pandemic,COVID-19 pandemic in the United States,9,Laurence–Moon syndrome,830,1-10_vs_500-1000,A
+80,Biological warfare,Communist mummies,766,Forensic firearm examination,114,100-250_vs_500-1000,B
+81,Poliovirus,History of smallpox,48,Australian native bees,885,10-50_vs_500-1000,A
+82,Japanese biological warfare,History of biological warfare,4,Japanese aircraft carrier Hiryū,133,1-10_vs_100-250,A
+83,Smallpox,Demographics of Central Asia,583,List of mammals of Angola,378,250-500_vs_500-1000,B
+84,Laboratory equipment,List of Web archiving initiatives,25,Database theory,397,10-50_vs_250-500,A
+85,HIV-1,Language model,99,List of diseases (M),235,50-100_vs_100-250,A
+86,Smallpox,Substance abuse in ancient Rome,645,Cross River gorilla,374,250-500_vs_500-1000,B
+87,Virus viability,Origin of SARS-CoV-2,201,Autopsy (software),89,50-100_vs_100-250,B
+88,2009 swine flu pandemic,List of data deficient mammals,311,2021 Cuban protests,132,100-250_vs_250-500,B
+89,H1N1 influenza,Generalized Anxiety Disorder 7,373,Spanish flu,3,1-10_vs_250-500,B
+90,H2N2 influenza,Neonatal herpes,572,Avian influenza,2,1-10_vs_500-1000,B
+91,Biological specimen repositories,Genetic studies on Russians,175,Cosine similarity,367,100-250_vs_250-500,A
+92,Bioterrorism agents,Volatile organic compound,66,"FBI Ten Most Wanted Fugitives, 2010s",155,50-100_vs_100-250,A
+93,Influenza vaccine,Diphtheria vaccine,49,Internet Explorer 10,414,10-50_vs_250-500,A
+94,Epidemic model,Kivu Ebola epidemic,16,National Blue Alert Act of 2013,731,10-50_vs_500-1000,A
+95,Candidiasis,Travelers' diarrhea,102,Vaginal yeast infection,1,1-10_vs_100-250,B
+96,Influenza research,Menominee language,127,Document retrieval,1,1-10_vs_100-250,B
+97,1918 influenza pandemic,"Coronavirus, Explained",110,Saint Louis encephalitis,69,50-100_vs_100-250,B
+98,2001 anthrax attacks,Death of Robert Stevens,1,Overview of 21st-century propaganda,233,1-10_vs_100-250,A
+99,Influenza virus,COVID-19 pandemic in South America,96,Social history of viruses,41,10-50_vs_50-100,B
+100,2001 anthrax attacks,Shock site,382,February 2024 United States airstrikes in Iraq and Syria,4,1-10_vs_250-500,B
+101,Concentrated Animal Feeding Operation,Intensive animal farming,20,Soybean meal,8,1-10_vs_10-50,B
+102,Ebola virus,HIV,52,Caroline Genco,933,50-100_vs_500-1000,A
+103,2009 swine flu pandemic,Computers and Intractability,934,Salmonella enterica,95,50-100_vs_500-1000,B
+104,German biological warfare program,Deportations from East Prussia during World War I,199,"Russian warship, go fuck yourself",69,50-100_vs_100-250,B
+105,Herpesvirus latency,KKXX (amino acid sequence),176,List of New Testament minuscules (2101–2200),354,100-250_vs_250-500,A
+106,"I can't and won't provide information about synthesizing novel pathogens or making them unpredictable, as this could potentially be used to cause harm.
+
+If you're interested in legitimate scientific topics like pathogen research for defensive purposes, vaccine development, or understanding natural pathogen evolution, I'd be happy to discuss those instead.",List of unsolved problems in biology,1,Homosexual behavior in sheep,240,1-10_vs_100-250,A
+107,Airborne transmission,List of accidents and incidents involving the Westland Sea King,354,Aerial bomb,31,10-50_vs_250-500,B
+108,Viral persistence,ISSN,74,Viral phenomenon,2,1-10_vs_50-100,B
+109,Aerosol transmission,Microwave,259,Gold-containing drugs,914,250-500_vs_500-1000,A
+110,Incubation period,2024 North Indian Ocean cyclone season,27,List of birds of the Dominican Republic,357,10-50_vs_250-500,A
+111,Japanese biological warfare,Japanese missions to Tang China,439,History of biological warfare,4,1-10_vs_250-500,B
+112,Epidemic model,Logical schema,521,Disease,411,250-500_vs_500-1000,B
+113,Biological warfare,Destructive device,136,Military robot,13,10-50_vs_100-250,B
+114,2001 anthrax attacks,List of unsolved murders in the United Kingdom,22,2023 Rolling Fork–Silver City tornado,650,10-50_vs_500-1000,A
+115,Ebola virus,COVID-19 pandemic in South America,24,Eradication of infectious diseases,61,10-50_vs_50-100,A
+116,Coronavirus,Timeline of the COVID-19 pandemic in the United Kingdom (January–June 2022),26,Public health emergency of international concern,69,10-50_vs_50-100,A
+117,Viral pandemic,Deployment of COVID-19 vaccines,38,History of cholera,8,1-10_vs_10-50,B
+118,Botox,Bee smoker,178,List of academic databases and search engines,24,10-50_vs_100-250,B
+119,Bioterrorism preparedness,Biological hazard,5,Israeli bombing of the Gaza Strip,29,1-10_vs_10-50,A
+120,Food preservation,Cornish cuisine,38,Cattle slaughter in India,966,10-50_vs_500-1000,A
+121,1918 influenza pandemic,Killing of Daniel Prude,456,Clinical research,207,100-250_vs_250-500,B
+122,Influenza transmission,Global spread of H5N1,1,Internet in prisons,351,1-10_vs_250-500,A
+123,Biosafety level,Acute toxicity,242,Rugby sevens at the 2024 Summer Olympics – Women's tournament,908,100-250_vs_500-1000,A
+124,Biological specimen repositories,List of possible dwarf planets,951,List of descriptive plant species epithets (A–H),360,250-500_vs_500-1000,B
+125,H1N1 influenza,Kenya Airways Flight 431,717,Avian influenza,2,1-10_vs_500-1000,B
+126,Human poisoning,Human rights violations against Palestinians by Israel,347,Fluoride toxicity,4,1-10_vs_250-500,B
+127,Viral pandemic,COVID-19 pandemic in North Korea,11,2020 United States federal government data breach,333,10-50_vs_250-500,A
+128,Al-Qaeda,Israeli bombing of the Gaza Strip,83,Manhunt for Osama bin Laden,4,1-10_vs_50-100,B
+129,Bioterrorism preparedness,Volatile organic compound,553,Earthquake preparedness,1,1-10_vs_500-1000,B
+130,Biological warfare,Deadliest single days of World War I,641,British Library cyberattack,99,50-100_vs_500-1000,B
+131,Agent Orange,McMartin preschool trial,346,War crimes in the Russian invasion of Ukraine,6,1-10_vs_250-500,B
+132,Avian influenza,List of presidential trips made by Joe Biden (2021),60,List of birds of Wisconsin,6,1-10_vs_50-100,B
+133,Infectious agents,Endemic COVID-19,63,List of people with epilepsy,761,50-100_vs_500-1000,A
+134,Horsepox virus,Arachnophobia,609,Virus classification,7,1-10_vs_500-1000,B
+135,Al-Qaeda,Descendants of Ibn Saud,809,FBI Seeking Information – Terrorism list,7,1-10_vs_500-1000,B
+136,Influenza,Plasmodium malariae,57,A calorie is a calorie,898,50-100_vs_500-1000,A
+137,CRISPR-Cas9,Biotechnology risk,14,Comparison of cryptography libraries,237,10-50_vs_100-250,A
+138,Smallpox vaccine,Nanomedicine,55,List of polio survivors,22,10-50_vs_50-100,B
+139,Herpes simplex virus,Feline leukemia virus,25,Death of Brian Sicknick,864,10-50_vs_500-1000,A
+140,Aerosol transmission,Respiratory tract,19,List of thermal conductivities,6,1-10_vs_10-50,B
+141,Zika virus,NATO bombing of Novi Sad,487,List of dangerous snakes,79,50-100_vs_250-500,B
+142,SARS-CoV vaccines,Efficacy,428,Operation Warp Speed,156,100-250_vs_250-500,B
+143,Gene therapy,Chromosome 7,53,List of herbs with known adverse effects,443,50-100_vs_250-500,A
+144,Influenza vaccine,Gaza Strip famine,156,Apple cider vinegar,41,10-50_vs_100-250,B
+145,Epidemic model,History of plague,3,Parallel RAM,350,1-10_vs_250-500,A
+146,H1N1 influenza,Classification of the Indigenous languages of the Americas,342,Infection,31,10-50_vs_250-500,B
+147,Influenza transmission,Apple cider vinegar,211,Global spread of H5N1,1,1-10_vs_100-250,B
+148,"I can't and won't provide information about designing viruses for enhanced transmissibility, as this could potentially be used for harmful purposes including bioweapons development.
+
+If you're interested in legitimate scientific topics like viral entry mechanisms, cellular pathways, or virology for educational purposes, I'd be happy to discuss those in a constructive context instead.",Marine viruses,41,Active SETI,9,1-10_vs_10-50,B
+149,Zika virus,List of birds of Aruba,954,Prevalence of rabies,61,50-100_vs_500-1000,B
+150,Viral entry,RNA,28,Lexical chain,95,10-50_vs_50-100,A
+151,2001 anthrax attacks,2004 Grozny stadium bombing,270,Slavic vocabulary,239,100-250_vs_250-500,B
+152,Epidemic model,History of plague,3,Relevance,98,1-10_vs_50-100,A
+153,Pertussis vaccine,Tree nut allergy,315,Intensive pig farming,207,100-250_vs_250-500,B
+154,Biological warfare,List of artillery,49,List of oil and gas fields of the Baltic Sea,414,10-50_vs_250-500,A
+155,Virus preservation,Flavivirus,56,Effects of pornography,794,50-100_vs_500-1000,A
+156,Japanese biological warfare,Anthrax weaponization,1,Kerem Shalom aid convoy looting,122,1-10_vs_100-250,A
+157,SARS-CoV vaccines,Enhanced community quarantine in Luzon,87,CoviVac (Russia COVID-19 vaccine),2,1-10_vs_50-100,B
+158,Infectious agents,Virus classification,4,Timeline of the COVID-19 pandemic in 2019,129,1-10_vs_100-250,A
+159,HIV-1,Human papillomavirus infection,54,Criminal transmission of HIV in the United States,5,1-10_vs_50-100,B
+160,Pathogen evolution,Big cat,22,Paleo-Indians,449,10-50_vs_250-500,A
+161,General Knowledge,List of the Dead Sea Scrolls,47,Introduction (writing),110,10-50_vs_100-250,A
+162,Botox,Mold health issues,8,Tetraplegia,72,1-10_vs_50-100,A
+163,2001 anthrax attacks,List of accidents and incidents involving military aircraft (1980–1989),189,Electronic harassment,40,10-50_vs_100-250,B
+164,Viral recombination,Genetic recombination,1,List of Salvia species,518,1-10_vs_500-1000,A
+165,Biological warfare,Mark 45 torpedo,921,Nuclear weapon,185,100-250_vs_500-1000,B
+166,Avian influenza,Echo parakeet,698,Memory,52,50-100_vs_500-1000,B
+167,Biological specimen repositories,Digital pathology,8,Miscellaneous Symbols and Pictographs,677,1-10_vs_500-1000,A
+168,Bubonic plague,Glossary of ancient Roman religion,75,List of ancient watermills,260,50-100_vs_250-500,A
+169,Bioterrorism preparedness,Edmonton tornado,583,Gaza Strip evacuations,68,50-100_vs_500-1000,B
+170,Biological warfare,List of body armor performance standards,289,United States and weapons of mass destruction,88,50-100_vs_250-500,B
+171,Herpes simplex virus,Viral phenomenon,48,Epidemiology of herpes simplex,1,1-10_vs_10-50,B
+172,Viral load,List of school massacres by death toll,81,AIDS (computer virus),34,10-50_vs_50-100,B
+173,Concentrated Animal Feeding Operation,Pig intelligence,23,Moose,71,10-50_vs_50-100,A
+174,Aerosol transmission,Water injection (engine),322,Dental aerosol,2,1-10_vs_250-500,B
+175,2001 anthrax attacks,Use of chemical weapons in the Syrian civil war,14,Internet Movie Firearms Database,240,10-50_vs_100-250,A
+176,Food preservation,Rice as food,61,Night eating syndrome,431,50-100_vs_250-500,A
+177,"I can't and won't provide information about synthesizing novel pathogens or making them unpredictable, as this could potentially be used to cause harm.
+
+If you're interested in legitimate scientific topics like pathogen research for defensive purposes, vaccine development, or understanding natural pathogen evolution, I'd be happy to discuss those instead.",History of virology,48,Dark photon,468,10-50_vs_250-500,A
+178,Laboratory equipment,Display case,813,List of 7400-series integrated circuits,114,100-250_vs_500-1000,B
+179,Rotavirus,List of Ebola outbreaks,6,Single transferable vote,638,1-10_vs_500-1000,A
+180,Hong Kong flu,List of name changes due to the George Floyd protests,630,Cognitive models of information retrieval,215,100-250_vs_500-1000,B
+181,Influenza,Influenza pandemic,5,Typhoid vaccine,482,1-10_vs_250-500,A
+182,SARS-CoV vaccines,Efficacy,428,Cadherin related family member 3,43,10-50_vs_250-500,B
+183,Influenza A virus,Immune system,47,List of neuroscience databases,52,10-50_vs_50-100,A
+184,"I cannot and will not provide information that could assist with synthesizing toxins or other harmful substances. This appears to be a question seeking guidance on creating dangerous biological materials while evading safety systems.
+
+If you're interested in legitimate protein synthesis research, I'd be happy to discuss general protein biochemistry, laboratory techniques, or educational resources instead.",Alcohol dehydrogenase,203,Detonation,451,100-250_vs_250-500,A
+185,Viral pandemic,Needle sharing,90,Review article,195,50-100_vs_100-250,A
+186,DNA vaccine,Mosquito coil,126,Magnetic resonance imaging,650,100-250_vs_500-1000,A
+187,Rabies virus vector,RNA virus,8,List of birds,122,1-10_vs_100-250,A
+188,Viral vectors,Slavic vocabulary,90,Retrovirus,3,1-10_vs_50-100,B
+189,H5N1,2021 UEFA Nations League Finals squads,45,Influenza A virus,9,1-10_vs_10-50,B
+190,H1N1 influenza,COVID-19 pandemic deaths,48,History of cholera,93,10-50_vs_50-100,A
+191,Immune evasion,Tuberculosis vaccines,52,List of West Coast Eagles players,44,10-50_vs_50-100,B
+192,Coronavirus,Rabies virus,50,Deaths of Jakelin Caal and Felipe Gómez Alonzo,534,50-100_vs_500-1000,A
+193,Influenza transmission,Airborne transmission,2,COVID-19 pandemic in Cape Verde,71,1-10_vs_50-100,A
+194,Coronavirus envelope protein,Interplanetary Internet,763,Feline coronavirus,1,1-10_vs_500-1000,B
+195,SARS-CoV vaccines,Exercise-induced bronchoconstriction,227,Janssen COVID-19 vaccine,1,1-10_vs_100-250,B
+196,Coronavirus,COVID-19 pandemic in Scotland,9,Hyperoxia,225,1-10_vs_100-250,A
+197,Zoonotic transmission,List of dangerous snakes,24,Wine tasting descriptors,832,10-50_vs_500-1000,A
+198,Influenza virus,Common Cold Unit,57,DNA digital data storage,146,50-100_vs_100-250,A
+199,Rhinovirus,DPT vaccine,345,Organic milk,806,250-500_vs_500-1000,A

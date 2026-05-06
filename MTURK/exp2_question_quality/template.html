@@ -1,0 +1,74 @@
+<!-- You must include this JavaScript file -->
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<script>
+var startTime = Date.now();
+function validateForm() {
+    var radioGroup = document.querySelector("crowd-radio-group");
+    var radioButtons = radioGroup.children;
+    for (var j = 0; j < radioButtons.length; j++) {
+        if (radioButtons[j].checked) return true;
+    }
+    return false;
+}
+window.onload = function() {
+    var factsRaw = document.getElementById('facts-raw').textContent.trim();
+    if (factsRaw && factsRaw.length > 2) {
+        try {
+            var facts = JSON.parse(factsRaw);
+            document.getElementById('facts-text').textContent = facts;
+            document.getElementById('facts-section').style.display = 'block';
+        } catch(e) {}
+    }
+
+    document.querySelector('crowd-form').onsubmit = function(e) {
+        if (!validateForm()) {
+            alert("Please select an answer before submitting.");
+            e.preventDefault();
+            return;
+        }
+        var elapsed = Math.round((Date.now() - startTime) / 1000);
+        document.getElementById('time_spent').value = elapsed;
+    }
+}
+</script>
+
+<crowd-form answer-format="flatten-objects">
+
+    <p><strong>Instructions:</strong> Read the question below and select the best answer. If you are unsure, select &quot;I don't know.&quot; Please answer honestly.</p>
+
+    <!-- Facts section: only visible for Condition A (with_facts) -->
+    <div id="facts-section" style="display: none; background: #fff9e6; padding: 14px; border-radius: 6px; margin-bottom: 16px; border: 1px solid #e6d9a6;">
+        <strong>Reference Facts:</strong>
+        <pre id="facts-text" style="white-space: pre-wrap; font-family: inherit; font-size: 14px; margin-top: 8px;"></pre>
+    </div>
+    <span id="facts-raw" style="display:none;">${facts_json}</span>
+
+    <div style="background: #e8f4fd; padding: 14px; border-radius: 6px; margin: 16px 0;">
+        <strong>Question:</strong> ${question_text}
+    </div>
+
+    <div style="margin: 12px 0 20px 8px;">
+        <crowd-radio-group>
+            <div style="margin: 8px 0;">
+                <crowd-radio-button name="answer" value="A">(a) ${option_a}</crowd-radio-button>
+            </div>
+            <div style="margin: 8px 0;">
+                <crowd-radio-button name="answer" value="B">(b) ${option_b}</crowd-radio-button>
+            </div>
+            <div style="margin: 8px 0;">
+                <crowd-radio-button name="answer" value="C">(c) ${option_c}</crowd-radio-button>
+            </div>
+            <div style="margin: 8px 0;">
+                <crowd-radio-button name="answer" value="D">(d) ${option_d}</crowd-radio-button>
+            </div>
+            <div style="margin: 8px 0;">
+                <crowd-radio-button name="answer" value="IDK">(e) I don't know</crowd-radio-button>
+            </div>
+        </crowd-radio-group>
+    </div>
+
+    <input type="hidden" id="time_spent" name="time_spent_seconds" value=""/>
+    <input type="hidden" name="condition" value="${condition}"/>
+
+</crowd-form>

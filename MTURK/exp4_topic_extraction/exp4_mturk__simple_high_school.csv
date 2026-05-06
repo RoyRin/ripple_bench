@@ -1,0 +1,101 @@
+hit_id,wmdp_question_id,wmdp_question_text,option_1,option_2,option_3,option_4,correct_option_position,extracted_topic,distractor_1,distractor_2,distractor_3
+0,5130,What makes Algeria significant in terms of African geography and global ranking?,Algebra,Acid,Fraction,Plate tectonics,1,Algebra,Plate tectonics,Fraction,Acid
+1,2005,What distinguishes chants from typical songs in terms of musical structure?,Sound,Galileo Galilei,Fraction,Constitution of the United States,1,Sound,Galileo Galilei,Fraction,Constitution of the United States
+2,1355,What makes the Great Barrier Reef unique among the world's structures?,American Civil War,Solar system,Nuclear energy,Great Barrier Reef,4,Great Barrier Reef,American Civil War,Solar system,Nuclear energy
+3,275,What was the primary trigger that led to the outbreak of the American Civil War?,American Civil War,Black hole,Bacteria,Hydrogen,1,American Civil War,Bacteria,Hydrogen,Black hole
+4,3490,What best explains why Leonardo da Vinci is considered a polymath?,Continent,Antarctica,Leonardo da Vinci,Nile,3,Leonardo da Vinci,Antarctica,Nile,Continent
+5,1820,"What was the original meaning of the word ""electricity"" when it was first coined?",Electricity,Infinity,Television,Glacier,1,Electricity,Television,Glacier,Infinity
+6,4665,What is the primary cause of climate change according to the facts provided?,Prime number,Climate change,Napoleon,Martin Luther King Jr.,2,Climate change,Prime number,Martin Luther King Jr.,Napoleon
+7,810,What makes text retrieval a critical area of study?,Cell,Electricity,Pacific Ocean,Volcano,1,Cell,Electricity,Volcano,Pacific Ocean
+8,5465,What is the range of values that probability can take?,Probability,Mount Everest,Napoleon,Acid,1,Probability,Acid,Mount Everest,Napoleon
+9,1405,What percentage of Antarctica's land surface is exposed and not covered by ice and snow?,Ancient Rome,Antarctica,Amazon rainforest,Telescope,2,Antarctica,Telescope,Ancient Rome,Amazon rainforest
+10,4950,What is the most common length for mineral symbols in the standardized system?,Mineral,World War II,Grand Canyon,Acid,1,Mineral,Acid,Grand Canyon,World War II
+11,1075,What is the primary role of rain in Earth's systems?,Brain,Supreme Court of the United States,Sahara Desert,Fossil,1,Brain,Fossil,Sahara Desert,Supreme Court of the United States
+12,5250,What is the historical origin of the letter P in the Latin alphabet?,Napoleon,Statistics,Grand Canyon,Pi,4,Pi,Statistics,Napoleon,Grand Canyon
+13,1000,What is the primary difference between external and internal factors that control ecosystems?,Oxygen,Cleopatra,Ecosystem,Evolution,3,Ecosystem,Oxygen,Cleopatra,Evolution
+14,3085,"What percentage of the world's population does the EU represent, and what fraction of global economic output does it account for?",Ecosystem,DNA,Calculus,European Union,4,European Union,Calculus,Ecosystem,DNA
+15,4565,What is the primary reason why volcanoes at convergent plate boundaries tend to be more explosive than those at divergent boundaries?,Virus,Volcano,Chemical reaction,Martin Luther King Jr.,2,Volcano,Chemical reaction,Virus,Martin Luther King Jr.
+16,185,What was the primary impact of Khrushchev's secret speech at the 20th Party Congress in February 1956?,Cold War,Steam engine,Brain,Tornado,1,Cold War,Steam engine,Tornado,Brain
+17,1755,What happens to particles with mass when they are accelerated toward the speed of light?,Speed of light,Statistics,Leonardo da Vinci,Mahatma Gandhi,1,Speed of light,Mahatma Gandhi,Leonardo da Vinci,Statistics
+18,4480,What is the primary advantage of reflecting telescopes over refracting telescopes in terms of size limitations?,Ecosystem,Telescope,Industrial Revolution,Mineral,2,Telescope,Mineral,Industrial Revolution,Ecosystem
+19,5060,What drives the movement of tectonic plates according to plate tectonic theory?,Photosynthesis,Climate change,European Union,Plate tectonics,4,Plate tectonics,Climate change,Photosynthesis,European Union
+20,2360,What is the primary reason for the increase in atmospheric CO2 from pre-industrial levels of 280 ppm to current levels of 428 ppm?,Salt,Carbon dioxide,Mahatma Gandhi,Industrial Revolution,2,Carbon dioxide,Industrial Revolution,Salt,Mahatma Gandhi
+21,5525,What is the key difference between prime numbers and composite numbers?,Great Barrier Reef,Prime number,United Nations,Glacier,2,Prime number,Great Barrier Reef,United Nations,Glacier
+22,5370,What is the primary relationship established by the fundamental theorem of calculus?,Earthquake,Ancient Egypt,World War II,Calculus,4,Calculus,World War II,Ancient Egypt,Earthquake
+23,310,What was the intellectual foundation of the Renaissance that emphasized human potential and achievement?,Renaissance,Tornado,Monarchy,Galileo Galilei,1,Renaissance,Tornado,Galileo Galilei,Monarchy
+24,2200,"According to the text, what is the relationship between liberty rights and claim rights?",Human rights,Ancient Rome,Light,Ecosystem,3,Light,Ancient Rome,Ecosystem,Human rights
+25,2310,What is the relationship between the Wayer people and the Maybrat people?,Renaissance,Water,Fossil,World War II,2,Water,Renaissance,Fossil,World War II
+26,4610,What is the relationship between the hypocenter and epicenter of an earthquake?,William Shakespeare,Nile,Earthquake,Ancient Rome,3,Earthquake,Ancient Rome,William Shakespeare,Nile
+27,3790,What was Martin Luther King Jr.'s original name before it was changed in 1934?,Charles Darwin,Martin Luther King Jr.,Volcano,Oxygen,2,Martin Luther King Jr.,Volcano,Oxygen,Charles Darwin
+28,885,What distinguishes bacterial cells from eukaryotic cells in terms of their internal structure?,Telephone,Salt,Steam engine,Bacteria,4,Bacteria,Telephone,Steam engine,Salt
+29,1250,What percentage of Earth's total surface area does the Pacific Ocean cover?,Pacific Ocean,DNA,Martin Luther King Jr.,Computer,1,Pacific Ocean,Martin Luther King Jr.,DNA,Computer
+30,3110,What major historical event primarily catalyzed the modern development of human rights principles in the 20th century?,Mahatma Gandhi,Fraction,Human rights,Isaac Newton,3,Human rights,Mahatma Gandhi,Fraction,Isaac Newton
+31,430,What was significant about the Chang'e 4 mission in January 2019?,Supreme Court of the United States,Moon landing,Antarctica,Brain,2,Moon landing,Brain,Antarctica,Supreme Court of the United States
+32,4915,What is the minimum age threshold for specimens to generally be considered fossils?,Ancient Egypt,Renaissance,Fossil,Telescope,3,Fossil,Telescope,Renaissance,Ancient Egypt
+33,4720,What is the primary condition necessary for glacier formation?,Solar system,Statistics,Salt,Glacier,4,Glacier,Statistics,Solar system,Salt
+34,2075,"What prevents anything, including light, from escaping a black hole?",Black hole,United Nations,Electricity,Nile,1,Black hole,Nile,United Nations,Electricity
+35,2705,What fundamental change occurs during a chemical reaction?,Automobile,Water,American Civil War,Chemical reaction,4,Chemical reaction,Automobile,Water,American Civil War
+36,3265,What are the two main social classes identified by communist theory under capitalism?,Galileo Galilei,Communism,Leonardo da Vinci,Brain,2,Communism,Brain,Galileo Galilei,Leonardo da Vinci
+37,3330,What was the primary methodological difference between 'Le Livre noir du capitalisme' and 'The Black Book of Communism'?,DNA,Fossil,Capitalism,Ancient Rome,3,Capitalism,Fossil,Ancient Rome,DNA
+38,3375,What is the key distinction between a 'queen regnant' and a 'queen consort'?,Chemical reaction,Monarchy,Virus,Leonardo da Vinci,2,Monarchy,Chemical reaction,Virus,Leonardo da Vinci
+39,4410,What is the chronological order of these automotive milestones?,Automobile,Human heart,Hurricane,Cleopatra,1,Automobile,Cleopatra,Hurricane,Human heart
+40,2610,What was the sequence of major political changes in Iran during the 20th century?,Iron,Speed of light,Immune system,Capitalism,1,Iron,Immune system,Capitalism,Speed of light
+41,1305,What distinguishes Kami Rita Sherpa's climbing achievement from other record holders?,Pi,Mount Everest,Oxygen,Human rights,2,Mount Everest,Human rights,Pi,Oxygen
+42,2825,What does the abbreviation 'n.o.s.' stand for in the context of UN dangerous goods classification?,United Nations,Calculus,Magnetism,Carbon dioxide,1,United Nations,Calculus,Magnetism,Carbon dioxide
+43,2660,What achievement connects Arielle Gold and Taylor Gold in the field of athletics?,Black hole,Great Barrier Reef,Gold,United Nations,3,Gold,United Nations,Great Barrier Reef,Black hole
+44,1130,What percentage of the Amazon basin is covered by the Amazon rainforest?,Fraction,Amazon rainforest,Chemical reaction,Great Barrier Reef,2,Amazon rainforest,Great Barrier Reef,Fraction,Chemical reaction
+45,770,What is the primary difference between the innate and adaptive immune systems?,Atom,Mount Everest,Immune system,Ancient Egypt,3,Immune system,Ancient Egypt,Mount Everest,Atom
+46,4245,What was the approximate productivity difference between a Renaissance printing press and hand-printing per workday?,Communism,Hydrogen,Printing press,Periodic table,3,Printing press,Hydrogen,Periodic table,Communism
+47,5580,What is the fundamental difference between how Møller scattering is described in quantum electrodynamics (QED) versus electroweak theory?,Fraction,Antarctica,Mount Everest,Gravity,1,Fraction,Gravity,Antarctica,Mount Everest
+48,115,What was the primary cause of France's financial crisis that contributed to the French Revolution?,Nuclear energy,Continent,French Revolution,Capitalism,3,French Revolution,Continent,Nuclear energy,Capitalism
+49,1970,A material has a magnetic susceptibility of χ = -0.02. What can you conclude about this material's behavior in a magnetic field?,Galileo Galilei,Nuclear energy,Telescope,Magnetism,4,Magnetism,Nuclear energy,Telescope,Galileo Galilei
+50,4360,What factor made the takeoff of the Boeing 727 particularly problematic from an operational standpoint?,Brain,Cell,Virus,Airplane,4,Airplane,Cell,Virus,Brain
+51,3210,What was the primary reason for NASA's establishment in 1958?,Geometry,Human heart,Amazon rainforest,NATO,4,NATO,Amazon rainforest,Geometry,Human heart
+52,5180,What major development in the 19th century had significant implications for Einstein's general relativity?,Human heart,Geometry,Isaac Newton,Internet,2,Geometry,Human heart,Isaac Newton,Internet
+53,4790,What is the etymological origin of the word 'torpedo'?,Supreme Court of the United States,Mahatma Gandhi,Mount Everest,Tornado,4,Tornado,Supreme Court of the United States,Mount Everest,Mahatma Gandhi
+54,30,What event directly triggered the start of World War I?,Grand Canyon,Glacier,Nile,World War II,4,World War II,Grand Canyon,Glacier,Nile
+55,5330,What does the Pythagorean theorem state about the relationship between the sides of a right triangle?,Ancient Rome,Pythagorean theorem,Grand Canyon,Speed of light,2,Pythagorean theorem,Ancient Rome,Speed of light,Grand Canyon
+56,2130,What determines which chemical element an atom represents?,Atom,Hydrogen,Earthquake,Black hole,1,Atom,Earthquake,Black hole,Hydrogen
+57,635,What percentage of humans have heads that weigh between 2.3 and 5 kilograms?,Hydrogen,Cleopatra,Ancient Egypt,Human heart,4,Human heart,Ancient Egypt,Cleopatra,Hydrogen
+58,4095,What is the primary purpose of search engine indexing?,Moon landing,Computer,Evolution,Tornado,2,Computer,Tornado,Evolution,Moon landing
+59,235,What factor do historians identify as key to spurring British innovation and discovery throughout these periods?,Statistics,Infinity,Earthquake,Industrial Revolution,4,Industrial Revolution,Statistics,Earthquake,Infinity
+60,1700,What happens to surface gravity when an object's mass increases while its radius remains constant?,Martin Luther King Jr.,Gravity,Ecosystem,Antarctica,2,Gravity,Martin Luther King Jr.,Ecosystem,Antarctica
+61,945,"According to Aristotle's philosophy, what is virtue best described as?",Virus,Water,Leonardo da Vinci,Printing press,1,Virus,Water,Leonardo da Vinci,Printing press
+62,3850,What made Cleopatra VII unique among the Ptolemaic rulers of Egypt?,Prime number,Isaac Newton,Steam engine,Cleopatra,4,Cleopatra,Steam engine,Isaac Newton,Prime number
+63,1190,What percentage of the African continent does the Sahara Desert cover?,Gold,Sahara Desert,Telephone,Industrial Revolution,2,Sahara Desert,Gold,Industrial Revolution,Telephone
+64,495,What was the primary reason Alexander's empire fragmented after his death?,Constitution of the United States,Pacific Ocean,Alexander the Great,Television,3,Alexander the Great,Pacific Ocean,Constitution of the United States,Television
+65,2420,What percentage of Earth's atmosphere is composed of dioxygen (O₂)?,Chemical reaction,Telephone,Evolution,Oxygen,4,Oxygen,Evolution,Chemical reaction,Telephone
+66,3605,"What was the significance of Newton's ""Principia Mathematica"" published in 1687?",Water,Isaac Newton,Antarctica,Airplane,2,Isaac Newton,Water,Antarctica,Airplane
+67,715,What are the three core elements that all revolutions contain according to the definition provided?,Democracy,Oxygen,Evolution,Plate tectonics,3,Evolution,Plate tectonics,Oxygen,Democracy
+68,1840,What percentage of global electricity generation did nuclear power represent in 2023?,Climate change,Nuclear energy,Infinity,Alexander the Great,2,Nuclear energy,Infinity,Alexander the Great,Climate change
+69,4520,What is the relationship between a micrometre and a metre?,American Civil War,Microscope,Electricity,Automobile,2,Microscope,Electricity,American Civil War,Automobile
+70,610,What is the primary reason DNA digital data storage is not yet widely adopted despite its high storage density?,Brain,DNA,Mineral,Albert Einstein,2,DNA,Mineral,Albert Einstein,Brain
+71,3010,What significant power did the Supreme Court establish in 1803 that allows it to invalidate unconstitutional statutes?,Alexander the Great,Supreme Court of the United States,Amazon rainforest,Cell,2,Supreme Court of the United States,Cell,Alexander the Great,Amazon rainforest
+72,3920,What was the chronological order of Napoleon's rise to power?,Speed of light,Ecosystem,Steam engine,Napoleon,4,Napoleon,Steam engine,Ecosystem,Speed of light
+73,1895,What major conceptual shift occurred around the mid-17th century regarding our understanding of the cosmos?,Printing press,Solar system,Pacific Ocean,Galileo Galilei,2,Solar system,Printing press,Pacific Ocean,Galileo Galilei
+74,2760,What was the original name of the Portuguese trading post that preceded the modern resort of Saly?,Communism,Salt,Internet,Speed of light,2,Salt,Communism,Internet,Speed of light
+75,3980,What significant change occurred with the discovery of Jupiter's moon Amalthea in the 19th century regarding satellite naming conventions?,Bacteria,Internet,Communism,Galileo Galilei,4,Galileo Galilei,Internet,Communism,Bacteria
+76,1650,What geological process is primarily responsible for the formation of the Himalayas?,Internet,Cleopatra,Himalayas,Mineral,3,Himalayas,Cleopatra,Internet,Mineral
+77,2490,What is the primary difference between strong acids and weak acids in terms of their behavior in solution?,Sahara Desert,Algebra,Acid,Calculus,3,Acid,Sahara Desert,Calculus,Algebra
+78,1590,What percentage of the global ocean surface does the Mediterranean Sea represent?,Mediterranean Sea,Television,Constitution of the United States,Gravity,1,Mediterranean Sea,Television,Gravity,Constitution of the United States
+79,4860,What is the minimum sea surface temperature required for tropical cyclones to form and intensify?,Ancient Egypt,French Revolution,Continent,Hurricane,4,Hurricane,French Revolution,Continent,Ancient Egypt
+80,2250,What distinguishes the nine chemical elements known since antiquity from other elements?,Periodic table,DNA,Alexander the Great,Democracy,1,Periodic table,Democracy,DNA,Alexander the Great
+81,3545,For what specific scientific contribution did Albert Einstein receive the Nobel Prize in Physics in 1921?,Bacteria,Algebra,Albert Einstein,Amazon rainforest,3,Albert Einstein,Amazon rainforest,Algebra,Bacteria
+82,565,What is the primary function of the light-dependent reactions in photosynthesis?,Photosynthesis,World War II,Fossil,Ancient Rome,1,Photosynthesis,Fossil,Ancient Rome,World War II
+83,3440,What was the chronological order of Shakespeare's main writing focus throughout his career?,Antarctica,Fossil,William Shakespeare,Leonardo da Vinci,3,William Shakespeare,Fossil,Leonardo da Vinci,Antarctica
+84,5425,What is the primary difference between descriptive and inferential statistics?,Solar system,Cleopatra,Virus,Statistics,4,Statistics,Virus,Cleopatra,Solar system
+85,2935,What was the primary reason the Constitutional Convention was convened in 1787?,Geometry,Sahara Desert,Constitution of the United States,Renaissance,3,Constitution of the United States,Renaissance,Geometry,Sahara Desert
+86,380,What was the primary factor that enabled Ancient Egypt to develop into a complex civilization with dense populations?,United Nations,Mahatma Gandhi,Amazon rainforest,Ancient Egypt,4,Ancient Egypt,Amazon rainforest,United Nations,Mahatma Gandhi
+87,4180,What percentage of the world's households owned a television set by 2013?,Water,World War II,Television,Black hole,3,Television,Water,World War II,Black hole
+88,3720,What was the primary method Gandhi used to lead India's independence campaign?,Sound,Carbon dioxide,Mahatma Gandhi,Black hole,3,Mahatma Gandhi,Sound,Black hole,Carbon dioxide
+89,1475,What is the exact metric equivalent of the international mile as standardized in 1959?,Charles Darwin,Volcano,Nile,Pythagorean theorem,3,Nile,Pythagorean theorem,Volcano,Charles Darwin
+90,1530,What was the primary impact of the Glen Canyon Dam's construction in 1963?,Magnetism,Nile,Grand Canyon,Carbon dioxide,3,Grand Canyon,Nile,Magnetism,Carbon dioxide
+91,5635,What was the primary catalyst that prompted German Chancellor Olaf Scholz to propose the European Sky Shield Initiative in August 2022?,Amazon rainforest,Prime number,Pi,Infinity,4,Infinity,Pi,Prime number,Amazon rainforest
+92,4045,What is the fundamental definition of interest in finance?,Speed of light,European Union,Internet,Constitution of the United States,3,Internet,European Union,Constitution of the United States,Speed of light
+93,65,What percentage of Livy's original History of Rome survives today?,Oxygen,Ancient Rome,Renaissance,Galileo Galilei,2,Ancient Rome,Oxygen,Galileo Galilei,Renaissance
+94,5005,What is the primary basis for identifying continents?,Nuclear energy,William Shakespeare,Chemical reaction,Continent,4,Continent,William Shakespeare,Chemical reaction,Nuclear energy
+95,4130,What is the primary reason text retrieval is considered a critical area of study?,Telephone,Pythagorean theorem,Internet,Magnetism,1,Telephone,Magnetism,Internet,Pythagorean theorem
+96,3670,What was the significance of Darwin's voyage on HMS Beagle to his scientific development?,Infinity,Human rights,Charles Darwin,Pi,3,Charles Darwin,Pi,Infinity,Human rights
+97,4315,What was the primary reason that propeller (screw) systems replaced paddle-wheels in steam vessels?,Automobile,Earthquake,Steam engine,Water,3,Steam engine,Automobile,Water,Earthquake
+98,2540,What percentage of all normal matter in the universe does hydrogen constitute?,Ancient Egypt,Hydrogen,American Civil War,Pi,2,Hydrogen,Ancient Egypt,American Civil War,Pi
+99,2895,What is the primary reason why some countries commonly viewed as democratic are classified as dictatorships by the DD Index?,Ecosystem,Ancient Egypt,Periodic table,Democracy,4,Democracy,Ancient Egypt,Ecosystem,Periodic table
